@@ -9,8 +9,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.StackPane; // Added import
-import javafx.scene.layout.VBox;     // Added import
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -101,6 +101,7 @@ public class StudentDashboardController {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to logout?", ButtonType.YES, ButtonType.NO);
         confirmation.showAndWait().ifPresent(response -> {
             if (response == ButtonType.YES) {
+                LoginController.signOut(); // Clear the session
                 try {
                     Parent root = FXMLLoader.load(getClass().getResource("/fxml/login.fxml"));
                     Stage stage = (Stage) logoutButton.getScene().getWindow();
@@ -119,61 +120,51 @@ public class StudentDashboardController {
 
     @FXML
     private void handleNotifications(ActionEvent event) {
-        // Placeholder
         System.out.println("Notifications clicked");
     }
 
     @FXML
     private void handleProfile(ActionEvent event) {
-        // Placeholder
         System.out.println("Profile clicked");
     }
 
     @FXML
     private void handleSettings(ActionEvent event) {
-        // Placeholder
         System.out.println("Settings clicked");
     }
 
     @FXML
     private void handleMyExams(ActionEvent event) {
-        // Placeholder
         System.out.println("My Exams clicked");
     }
 
     @FXML
     private void handleResults(ActionEvent event) {
-        // Placeholder
         System.out.println("Results clicked");
     }
 
     @FXML
     private void handleCalendar(ActionEvent event) {
-        // Placeholder
         System.out.println("Calendar clicked");
     }
 
     @FXML
     private void handleHelp(ActionEvent event) {
-        // Placeholder
         System.out.println("Help clicked");
     }
 
     @FXML
     private void handleRefresh(ActionEvent event) {
-        // Placeholder
         System.out.println("Refresh clicked");
     }
 
     @FXML
     private void handleViewAllResults(ActionEvent event) {
-        // Placeholder
         System.out.println("View All Results clicked");
     }
 
     @FXML
     private void handleViewResult(ActionEvent event) {
-        // Placeholder
         System.out.println("View Result clicked");
     }
 }

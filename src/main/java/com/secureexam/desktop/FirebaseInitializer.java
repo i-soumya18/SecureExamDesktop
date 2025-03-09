@@ -11,7 +11,7 @@ public class FirebaseInitializer {
 
     public static void initialize() {
         if (!initialized) {
-            try (InputStream serviceAccount = FirebaseInitializer.class.getResourceAsStream("/firebase-service-account.json")) {
+            try (InputStream serviceAccount = FirebaseInitializer.class.getResourceAsStream("/assistant-65908-firebase-adminsdk-w999m-181efe1e50.json")) {
                 if (serviceAccount == null) {
                     throw new IOException("Service account file not found in resources");
                 }
