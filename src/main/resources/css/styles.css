@@ -1,0 +1,670 @@
+/* Modern JavaFX Exam Application Stylesheet */
+
+/* Root and general styling */
+.root {
+    -fx-background-color: #f9f9fb;
+    -fx-font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Header styling */
+.header-panel {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+.app-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-fill: #333333;
+}
+
+.timer-label {
+    -fx-font-size: 16px;
+    -fx-background-color: #f0f3f8;
+    -fx-background-radius: 20px;
+    -fx-padding: 5 15 5 15;
+    -fx-text-fill: #2c3e50;
+    -fx-font-weight: bold;
+}
+
+/* Progress bar styling */
+.progress-bar {
+    -fx-pref-height: 6px;
+    -fx-background-radius: 3px;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: #4285f4;
+    -fx-background-radius: 3px;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #e6e6e6;
+    -fx-background-radius: 3px;
+}
+
+/* Content area styling */
+.content-area {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.content-area > .viewport {
+    -fx-background-color: transparent;
+}
+
+.question-container {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 10, 0, 0, 4);
+}
+
+.question-number {
+    -fx-font-size: 14px;
+    -fx-text-fill: #757575;
+}
+
+.question-text {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+    -fx-wrap-text: true;
+}
+
+/* Option styling */
+.options-container {
+    -fx-padding: 10 0 0 0;
+}
+
+.option-radio {
+    -fx-font-size: 16px;
+    -fx-padding: 8px;
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+}
+
+.option-radio:hover {
+    -fx-background-color: #f5f9ff;
+    -fx-border-color: #c0d6ff;
+}
+
+.option-radio:selected {
+    -fx-background-color: #edf4ff;
+    -fx-border-color: #4285f4;
+}
+
+.option-radio .radio {
+    -fx-padding: 4px;
+}
+
+.option-radio .dot {
+    -fx-background-color: transparent;
+    -fx-padding: 4px;
+}
+
+.option-radio:selected .dot {
+    -fx-background-color: #4285f4;
+}
+
+/* Bottom actions panel */
+.actions-panel {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, -2);
+}
+
+/* Button styling */
+.navigation-button {
+    -fx-background-color: #f0f3f8;
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20 10 20;
+    -fx-background-radius: 6px;
+}
+
+.navigation-button:hover {
+    -fx-background-color: #e2e8f0;
+}
+
+.navigation-button:disabled {
+    -fx-opacity: 0.5;
+}
+
+.flag-button {
+    -fx-background-color: white;
+    -fx-text-fill: #f39c12;
+    -fx-border-color: #f39c12;
+    -fx-border-width: 1px;
+    -fx-font-size: 14px;
+    -fx-padding: 10 20 10 20;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+}
+
+.flag-button:hover {
+    -fx-background-color: #fff8e6;
+}
+
+.submit-button {
+    -fx-background-color: #4285f4;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 25 10 25;
+    -fx-background-radius: 6px;
+}
+
+.submit-button:hover {
+    -fx-background-color: #3367d6;
+}
+
+/* Focus styles for accessibility */
+.button:focused, .radio-button:focused {
+    -fx-effect: dropshadow(gaussian, #4285f4, 3, 0, 0, 0);
+}
+
+/* Animation effects */
+.button, .radio-button {
+    -fx-transition-duration: 0.2s;
+}
+
+/*--------------------------------------*/
+
+/* Modern Login Screen Stylesheet */
+
+/* Root and general styling */
+.root {
+    -fx-background-color: #f9f9fb;
+    -fx-font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+.login-container {
+    -fx-background-color: transparent;
+}
+
+.login-card {
+    -fx-background-color: white;
+    -fx-background-radius: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 20, 0, 0, 10);
+}
+
+/* Logo and title styling */
+.login-header {
+    -fx-alignment: center;
+}
+
+.logo-container {
+    -fx-background-color: #edf4ff;
+    -fx-background-radius: 50%;
+    -fx-min-width: 80px;
+    -fx-min-height: 80px;
+    -fx-max-width: 80px;
+    -fx-max-height: 80px;
+    -fx-alignment: center;
+}
+
+.app-logo {
+    -fx-effect: dropshadow(gaussian, rgba(66, 133, 244, 0.3), 10, 0, 0, 0);
+}
+
+.app-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-fill: #2c3e50;
+    -fx-padding: 10 0 0 0;
+}
+
+.login-subtitle {
+    -fx-font-size: 14px;
+    -fx-fill: #757575;
+    -fx-padding: 5 0 0 0;
+}
+
+/* Field styling */
+.field-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #555555;
+    -fx-font-weight: bold;
+}
+
+.text-field, .password-field {
+    -fx-background-color: #f5f5f7;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8px;
+    -fx-padding: 12px;
+    -fx-font-size: 14px;
+}
+
+.text-field:focused, .password-field:focused {
+    -fx-background-color: white;
+    -fx-border-color: #4285f4;
+    -fx-border-width: 1.5px;
+    -fx-effect: dropshadow(gaussian, rgba(66, 133, 244, 0.2), 5, 0, 0, 0);
+}
+
+/* Forgot password link */
+.forgot-password {
+    -fx-text-fill: #4285f4;
+    -fx-underline: false;
+    -fx-font-size: 12px;
+}
+
+.forgot-password:hover {
+    -fx-underline: true;
+}
+
+/* Remember me checkbox */
+.remember-me {
+    -fx-font-size: 14px;
+    -fx-text-fill: #555555;
+}
+
+.remember-me .box {
+    -fx-background-color: #f5f5f7;
+    -fx-background-radius: 3px;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 3px;
+}
+
+.remember-me:selected .box {
+    -fx-background-color: #4285f4;
+    -fx-border-color: #4285f4;
+}
+
+.remember-me:selected .mark {
+    -fx-background-color: white;
+}
+
+/* Login button */
+.login-button {
+    -fx-background-color: #4285f4;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 20 12 20;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.login-button:hover {
+    -fx-background-color: #3367d6;
+}
+
+.login-button:pressed {
+    -fx-background-color: #2a56c6;
+}
+
+/* Error label */
+.error-label {
+    -fx-text-fill: #d32f2f;
+    -fx-font-size: 13px;
+    -fx-padding: 5 0 5 0;
+    -fx-max-width: 400px;
+    -fx-wrap-text: true;
+}
+
+/* Loading indicator */
+.loading-indicator {
+    -fx-progress-color: #4285f4;
+}
+
+/* Sign up container */
+.signup-container {
+    -fx-border-color: transparent transparent transparent transparent;
+    -fx-border-width: 1px 0 0 0;
+    -fx-border-style: solid;
+    -fx-border-color: #eeeeee;
+}
+
+.signup-container Label {
+    -fx-text-fill: #555555;
+    -fx-font-size: 14px;
+}
+
+.signup-link {
+    -fx-text-fill: #4285f4;
+    -fx-underline: false;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.signup-link:hover {
+    -fx-underline: true;
+}
+
+/* Focus styling for accessibility */
+.button:focused, .hyperlink:focused, .text-field:focused, .password-field:focused, .check-box:focused {
+    -fx-effect: dropshadow(gaussian, #4285f4, 3, 0, 0, 0);
+}
+
+/* student_dashboard */
+
+/* Modern Student Dashboard Stylesheet */
+
+/* Root and general styling */
+.root {
+    -fx-background-color: #f9f9fb;
+    -fx-font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Header styling */
+.dashboard-header {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+    -fx-alignment: center-left;
+}
+
+.app-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-fill: #333333;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 50%;
+    -fx-min-width: 36px;
+    -fx-min-height: 36px;
+    -fx-max-width: 36px;
+    -fx-max-height: 36px;
+    -fx-padding: 8px;
+}
+
+.icon-button:hover {
+    -fx-background-color: #f0f3f8;
+}
+
+.user-menu-button {
+    -fx-background-color: transparent;
+    -fx-padding: 4px 8px;
+    -fx-font-size: 14px;
+}
+
+.user-menu-button:hover {
+    -fx-background-color: #f0f3f8;
+    -fx-background-radius: 5px;
+}
+
+.avatar {
+    -fx-background-radius: 50%;
+}
+
+/* Sidebar styling */
+.sidebar {
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+    -fx-pref-width: 220px;
+}
+
+.sidebar-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #555555;
+    -fx-font-size: 14px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 12px 20px;
+    -fx-border-width: 0 0 0 3px;
+    -fx-border-color: transparent;
+    -fx-graphic-text-gap: 12px;
+}
+
+.sidebar-button:hover {
+    -fx-background-color: #f5f9ff;
+    -fx-text-fill: #4285f4;
+    -fx-border-color: #c0d6ff;
+}
+
+.active-nav-item {
+    -fx-background-color: #edf4ff;
+    -fx-text-fill: #4285f4;
+    -fx-border-color: #4285f4;
+    -fx-font-weight: bold;
+}
+
+/* Content area styling */
+.content-area {
+    -fx-background-color: transparent;
+}
+
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-fill: #2c3e50;
+}
+
+.page-subtitle {
+    -fx-font-size: 14px;
+    -fx-fill: #757575;
+    -fx-padding: 5 0 0 0;
+}
+
+.dashboard-content {
+    -fx-spacing: 25;
+}
+
+/* Search and filter styling */
+.filter-bar {
+    -fx-padding: 0 0 20 0;
+    -fx-alignment: center-left;
+}
+
+.search-field {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px 12px;
+    -fx-font-size: 14px;
+}
+
+.search-field:focused {
+    -fx-background-color: white;
+    -fx-border-color: #4285f4;
+}
+
+.sort-combo, .filter-combo {
+    -fx-background-color: white;
+    -fx-background-radius: 8px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8px;
+    -fx-padding: 8px 12px;
+    -fx-font-size: 14px;
+}
+
+.sort-combo:focused, .filter-combo:focused {
+    -fx-border-color: #4285f4;
+}
+
+/* Section headers */
+.section-header {
+    -fx-padding: 0 0 10 0;
+}
+
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-fill: #2c3e50;
+}
+
+.count-label {
+    -fx-background-color: #f0f3f8;
+    -fx-background-radius: 12px;
+    -fx-padding: 4px 12px;
+    -fx-text-fill: #4285f4;
+    -fx-font-size: 12px;
+}
+
+.view-all-link {
+    -fx-text-fill: #4285f4;
+    -fx-font-size: 14px;
+    -fx-underline: false;
+}
+
+.view-all-link:hover {
+    -fx-underline: true;
+}
+
+/* Exam list styling */
+.exams-container, .recent-results-container {
+    -fx-spacing: 15;
+}
+
+.exam-list-container {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 10, 0, 0, 4);
+    -fx-min-height: 250px;
+    -fx-max-height: 350px;
+}
+
+.exam-list-view {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10px;
+    -fx-padding: 5;
+    -fx-border-width: 0;
+}
+
+.exam-list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 10 15;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: #f0f0f0;
+}
+
+.exam-list-view .list-cell:hover {
+    -fx-background-color: #f5f9ff;
+}
+
+.exam-list-view .list-cell:selected {
+    -fx-background-color: #edf4ff;
+    -fx-text-fill: #4285f4;
+}
+
+.exam-list-view .list-cell:empty {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* Action buttons */
+.action-buttons {
+    -fx-padding: 10 0 0 0;
+}
+
+.primary-button {
+    -fx-background-color: #4285f4;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 20;
+    -fx-background-radius: 6px;
+}
+
+.primary-button:hover {
+    -fx-background-color: #3367d6;
+}
+
+.primary-button:disabled {
+    -fx-opacity: 0.5;
+}
+
+.secondary-button {
+    -fx-background-color: #f0f3f8;
+    -fx-text-fill: #2c3e50;
+    -fx-font-size: 14px;
+    -fx-padding: 10 20;
+    -fx-background-radius: 6px;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #e2e8f0;
+}
+
+/* Recent results styling */
+.results-cards {
+    -fx-alignment: center-left;
+}
+
+.result-card {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-padding: 15 20;
+    -fx-spacing: 10;
+    -fx-pref-width: 250px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 10, 0, 0, 4);
+}
+
+.result-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.result-date {
+    -fx-font-size: 12px;
+    -fx-text-fill: #757575;
+}
+
+.result-score {
+    -fx-padding: 5 0;
+}
+
+.score-value {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+}
+
+.grade-label {
+    -fx-background-color: #edf4ff;
+    -fx-background-radius: 4px;
+    -fx-padding: 3px 8px;
+    -fx-text-fill: #4285f4;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.view-details-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #4285f4;
+    -fx-padding: 5 0;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+}
+
+.view-details-button:hover {
+    -fx-underline: true;
+}
+
+/* Empty state styling */
+.empty-results {
+    -fx-background-color: white;
+    -fx-background-radius: 10px;
+    -fx-min-height: 180px;
+    -fx-min-width: 250px;
+    -fx-padding: 20;
+    -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 10, 0, 0, 4);
+}
+
+.empty-text {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-fill: #555555;
+}
+
+.empty-subtext {
+    -fx-font-size: 13px;
+    -fx-fill: #757575;
+    -fx-text-alignment: center;
+}
+
+/* Focus styling for accessibility */
+.button:focused, .text-field:focused, .combo-box:focused, .list-view:focused {
+    -fx-effect: dropshadow(gaussian, #4285f4, 3, 0, 0, 0);
+}

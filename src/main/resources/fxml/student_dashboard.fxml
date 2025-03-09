@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.image.Image?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.StudentDashboardController" styleClass="root">
+    <stylesheets>
+        <URL value="@../css/styles.css" />
+    </stylesheets>
+
+    <!-- Top Navigation Bar -->
+    <top>
+        <HBox styleClass="dashboard-header">
+            <padding>
+                <Insets top="15" right="25" bottom="15" left="25" />
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="15">
+                <ImageView fitHeight="30" fitWidth="30" preserveRatio="true">
+                    <Image url="@../images/google.png" />
+                </ImageView>
+                <Text text="SecureExam" styleClass="app-title" />
+            </HBox>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <HBox alignment="CENTER_RIGHT" spacing="15">
+                <Button fx:id="notificationsButton" styleClass="icon-button" onAction="#handleNotifications">
+                    <graphic>
+                        <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                            <Image url="@../images/notification.png" />
+                        </ImageView>
+                    </graphic>
+                </Button>
+
+                <MenuButton fx:id="userMenuButton" text="John Doe" styleClass="user-menu-button">
+                    <graphic>
+                        <ImageView fitHeight="24" fitWidth="24" preserveRatio="true" styleClass="avatar">
+                            <Image url="@../images/hacker.png" />
+                        </ImageView>
+                    </graphic>
+                    <items>
+                        <MenuItem text="Profile" onAction="#handleProfile" />
+                        <MenuItem text="Settings" onAction="#handleSettings" />
+                        <SeparatorMenuItem />
+                        <MenuItem text="Logout" onAction="#handleLogout" />
+                    </items>
+                </MenuButton>
+            </HBox>
+        </HBox>
+    </top>
+
+    <!-- Left Sidebar Navigation -->
+    <left>
+        <VBox styleClass="sidebar">
+            <padding>
+                <Insets top="20" right="0" bottom="20" left="0" />
+            </padding>
+
+            <Button text="Dashboard" styleClass="sidebar-button, active-nav-item">
+                <graphic>
+                    <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                        <Image url="@../images/business-report.png" />
+                    </ImageView>
+                </graphic>
+            </Button>
+
+            <Button text="My Exams" styleClass="sidebar-button" onAction="#handleMyExams">
+                <graphic>
+                    <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                        <Image url="@../images/exam.png" />
+                    </ImageView>
+                </graphic>
+            </Button>
+
+            <Button text="Results" styleClass="sidebar-button" onAction="#handleResults">
+                <graphic>
+                    <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                        <Image url="@../images/result.png" />
+                    </ImageView>
+                </graphic>
+            </Button>
+
+            <Button text="Calendar" styleClass="sidebar-button" onAction="#handleCalendar">
+                <graphic>
+                    <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                        <Image url="@../images/calendar.png" />
+                    </ImageView>
+                </graphic>
+            </Button>
+
+            <Region VBox.vgrow="ALWAYS" />
+
+            <Button text="Help" styleClass="sidebar-button" onAction="#handleHelp">
+                <graphic>
+                    <ImageView fitHeight="18" fitWidth="18" preserveRatio="true">
+                        <Image url="@../images/help.png" />
+                    </ImageView>
+                </graphic>
+            </Button>
+        </VBox>
+    </left>
+
+    <!-- Main Content Area -->
+    <center>
+        <BorderPane styleClass="content-area">
+            <top>
+                <VBox>
+                    <padding>
+                        <Insets top="30" right="30" bottom="20" left="30" />
+                    </padding>
+
+                    <Text text="Student Dashboard" styleClass="page-title" />
+                    <Text text="Welcome back! Here are your upcoming exams." styleClass="page-subtitle" />
+                </VBox>
+            </top>
+
+            <center>
+                <VBox styleClass="dashboard-content">
+                    <padding>
+                        <Insets top="0" right="30" bottom="30" left="30" />
+                    </padding>
+
+                    <!-- Search and Filter Bar -->
+                    <HBox spacing="15" styleClass="filter-bar">
+                        <TextField fx:id="searchField" promptText="Search exams..." styleClass="search-field" HBox.hgrow="ALWAYS" />
+                        <ComboBox fx:id="sortComboBox" promptText="Sort by" styleClass="sort-combo" />
+                        <ComboBox fx:id="filterComboBox" promptText="Filter" styleClass="filter-combo" />
+                    </HBox>
+
+                    <!-- Exams Section -->
+                    <VBox spacing="15" styleClass="exams-container">
+                        <HBox alignment="CENTER_LEFT" styleClass="section-header">
+                            <Text text="Available Exams" styleClass="section-title" />
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Label fx:id="examCountLabel" text="5 exams" styleClass="count-label" />
+                        </HBox>
+
+                        <VBox styleClass="exam-list-container">
+                            <ListView fx:id="examListView" styleClass="exam-list-view" VBox.vgrow="ALWAYS" />
+                        </VBox>
+
+                        <HBox spacing="15" alignment="CENTER_RIGHT" styleClass="action-buttons">
+                            <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="secondary-button" />
+                            <Button fx:id="startExamButton" text="Start Selected Exam" onAction="#handleStartExam" disable="true" styleClass="primary-button" />
+                        </HBox>
+                    </VBox>
+
+                    <!-- Recent Results Section -->
+                    <VBox spacing="15" styleClass="recent-results-container">
+                        <HBox alignment="CENTER_LEFT" styleClass="section-header">
+                            <Text text="Recent Results" styleClass="section-title" />
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Hyperlink text="View All" onAction="#handleViewAllResults" styleClass="view-all-link" />
+                        </HBox>
+
+                        <HBox spacing="20" styleClass="results-cards">
+                            <StackPane fx:id="emptyResultsPlaceholder" styleClass="empty-results" visible="true">
+                                <VBox alignment="CENTER" spacing="10">
+                                    <ImageView fitHeight="60" fitWidth="60" preserveRatio="true">
+                                        <Image url="@../images/search.png" />
+                                    </ImageView>
+                                    <Text text="No recent exam results" styleClass="empty-text" />
+                                    <Text text="Your completed exam results will appear here" styleClass="empty-subtext" />
+                                </VBox>
+                            </StackPane>
+
+                            <VBox fx:id="resultCard1" styleClass="result-card" visible="false">
+                                <Label text="Mathematics 101" styleClass="result-title" />
+                                <Label text="Completed: Mar 5, 2025" styleClass="result-date" />
+                                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="result-score">
+                                    <Label text="Score: 85%" styleClass="score-value" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Label text="B+" styleClass="grade-label" />
+                                </HBox>
+                                <Button text="View Details" styleClass="view-details-button" onAction="#handleViewResult" />
+                            </VBox>
+
+                            <VBox fx:id="resultCard2" styleClass="result-card" visible="false">
+                                <Label text="Computer Science" styleClass="result-title" />
+                                <Label text="Completed: Mar 3, 2025" styleClass="result-date" />
+                                <HBox alignment="CENTER_LEFT" spacing="10" styleClass="result-score">
+                                    <Label text="Score: 92%" styleClass="score-value" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Label text="A-" styleClass="grade-label" />
+                                </HBox>
+                                <Button text="View Details" styleClass="view-details-button" onAction="#handleViewResult" />
+                            </VBox>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </center>
+        </BorderPane>
+    </center>
+</BorderPane>
