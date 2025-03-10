@@ -1,36 +1,41 @@
 package com.secureexam.desktop;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.Arrays;
 
-@Document(collection = "questions")
 public class Question {
-
-    @Id
-    private String id;
     private String examId;
     private String text;
     private String[] options;
     private String correctAnswer;
 
-    // Getters, setters, and constructors
-    public Question() {}
-
     public Question(String examId, String text, String[] options, String correctAnswer) {
+        if (examId == null || text == null || options == null || correctAnswer == null) {
+            throw new IllegalArgumentException("All question fields must be non-null");
+        }
+        if (options.length < 2) {
+            throw new IllegalArgumentException("Question must have at least 2 options");
+        }
+        if (!Arrays.asList(options).contains(correctAnswer)) {
+            throw new IllegalArgumentException("Correct answer must be one of the options");
+        }
         this.examId = examId;
         this.text = text;
-        this.options = options;
+        this.options = options.clone(); // Defensive copy to prevent external modification
         this.correctAnswer = correctAnswer;
     }
 
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
     public String getExamId() { return examId; }
-    public void setExamId(String examId) { this.examId = examId; }
     public String getText() { return text; }
-    public void setText(String text) { this.text = text; }
-    public String[] getOptions() { return options; }
-    public void setOptions(String[] options) { this.options = options; }
+    public String[] getOptions() { return options.clone(); } // Defensive copy
     public String getCorrectAnswer() { return correctAnswer; }
-    public void setCorrectAnswer(String correctAnswer) { this.correctAnswer = correctAnswer; }
+
+    public void setOptions(String[] options) {
+        if (options == null || options.length < 2) {
+            throw new IllegalArgumentException("Options array must be non-null and have at least 2 elements");
+        }
+        if (!Arrays.asList(options).contains(correctAnswer)) {
+            throw new IllegalArgumentException("New options must include the correct answer");
+        }
+        this.options = options.clone(); // Defensive copy
+    }
 }

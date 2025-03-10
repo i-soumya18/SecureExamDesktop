@@ -668,3 +668,13 @@
 .button:focused, .text-field:focused, .combo-box:focused, .list-view:focused {
     -fx-effect: dropshadow(gaussian, #4285f4, 3, 0, 0, 0);
 }
+
+.quit-button {
+    -fx-background-color: #ff4444;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 8 16;
+}
+.quit-button:hover {
+    -fx-background-color: #cc0000;
+}

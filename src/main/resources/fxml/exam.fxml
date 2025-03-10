@@ -4,7 +4,6 @@
 <?import javafx.geometry.Insets?>
 <?import java.net.URL?>
 <?import javafx.scene.text.Text?>
-<?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.ExamController" styleClass="root">
     <stylesheets>
@@ -31,16 +30,13 @@
                 <padding>
                     <Insets top="30" right="40" bottom="30" left="40" />
                 </padding>
-
                 <Label fx:id="questionNumberLabel" text="Question 1 of 20" styleClass="question-number" />
                 <Label fx:id="questionLabel" text="What is the capital of France?" styleClass="question-text" wrapText="true" />
-
                 <VBox spacing="12" styleClass="options-container">
                     <RadioButton fx:id="option1" text="Paris" toggleGroup="$optionsGroup" styleClass="option-radio" mnemonicParsing="true" />
                     <RadioButton fx:id="option2" text="Florida" toggleGroup="$optionsGroup" styleClass="option-radio" mnemonicParsing="true" />
                     <RadioButton fx:id="option3" text="Python" toggleGroup="$optionsGroup" styleClass="option-radio" mnemonicParsing="true" />
                     <RadioButton fx:id="option4" text="MongoDB" toggleGroup="$optionsGroup" styleClass="option-radio" mnemonicParsing="true" />
-                    <ToggleGroup fx:id="optionsGroup" />
                 </VBox>
             </VBox>
         </ScrollPane>
@@ -54,6 +50,7 @@
             <Button fx:id="previousButton" text="Previous" onAction="#handlePrevious" disable="true" styleClass="navigation-button" />
             <Region HBox.hgrow="ALWAYS" />
             <Button fx:id="flagButton" text="Flag Question" onAction="#handleFlag" styleClass="flag-button" />
+            <Button fx:id="quitButton" text="Quit Exam" onAction="#handleQuit" styleClass="quit-button" />
             <Button fx:id="nextButton" text="Next Question" onAction="#handleNext" styleClass="navigation-button" />
             <Button fx:id="submitButton" text="Submit Exam" onAction="#handleSubmit" styleClass="submit-button" />
         </HBox>
