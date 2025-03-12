@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 public class LoginController {
     private static final Logger LOGGER = Logger.getLogger(LoginController.class.getName());
-    private static final String API_KEY = "AIzaSyBaO5yvrwKXVHiCU2_UFOI1jiql7Kou7So"; // Firebase Web API Key
+    private static final String API_KEY = "AIza*************VHiCU2_UFOI1jiql7Kou7So"; // Firebase Web API Key
     private static final OkHttpClient client = new OkHttpClient();
     private static String idToken;
     private static String refreshToken;
