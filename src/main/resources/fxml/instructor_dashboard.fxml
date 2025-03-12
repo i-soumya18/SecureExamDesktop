@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.InstructorDashboardController" styleClass="root">
+    <stylesheets>
+        <URL value="@../css/styles.css" />
+    </stylesheets>
+
+    <!-- Top Header -->
+    <top>
+        <HBox styleClass="dashboard-header">
+            <padding>
+                <Insets top="15" right="25" bottom="15" left="25" />
+            </padding>
+            <Text text="Instructor Dashboard" styleClass="app-title" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout" styleClass="logout-button" />
+        </HBox>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <VBox spacing="20" styleClass="instructor-container">
+            <padding>
+                <Insets top="30" right="40" bottom="40" left="40" />
+            </padding>
+
+            <!-- Create Exam Section -->
+            <VBox spacing="10" styleClass="section">
+                <Text text="Create New Exam" styleClass="section-title" />
+                <GridPane hgap="10" vgap="10" styleClass="form-grid">
+                    <Label text="Exam Name" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examName" promptText="e.g., Math Test Series" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Exam Code" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examCode" promptText="e.g., MATH2025" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Stream" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examStream" promptText="e.g., Engineering" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Branch" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examBranch" promptText="e.g., CSE" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Course" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examCourse" promptText="e.g., B.Tech" GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Class" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examClass" promptText="e.g., Semester 4" GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Section" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="examSection" promptText="e.g., A" GridPane.rowIndex="6" GridPane.columnIndex="1" styleClass="text-field" />
+                </GridPane>
+                <Button fx:id="createExam" text="Create Exam" onAction="#handleCreateExam" styleClass="primary-button" />
+            </VBox>
+
+            <!-- Add Question Section -->
+            <VBox spacing="10" styleClass="section">
+                <Text text="Add Question to Exam" styleClass="section-title" />
+                <GridPane hgap="10" vgap="10" styleClass="form-grid">
+                    <Label text="Exam ID" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="questionExamId" promptText="e.g., math123" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Question Text" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="questionText" promptText="e.g., What is 2 + 2?" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Option 1" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="option1" promptText="e.g., 1" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Option 2" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="option2" promptText="e.g., 2" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Option 3" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="option3" promptText="e.g., 3" GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Option 4" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="option4" promptText="e.g., 4" GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Correct Answer" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="correctAnswer" promptText="e.g., 4" GridPane.rowIndex="6" GridPane.columnIndex="1" styleClass="text-field" />
+                </GridPane>
+                <Button fx:id="addQuestion" text="Add Question" onAction="#handleAddQuestion" styleClass="primary-button" />
+            </VBox>
+
+            <!-- Feedback Label -->
+            <Label fx:id="feedbackLabel" text="" styleClass="feedback-label" wrapText="true" />
+        </VBox>
+    </center>
+</BorderPane>

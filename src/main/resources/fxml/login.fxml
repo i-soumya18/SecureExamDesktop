@@ -27,8 +27,7 @@
 
                     <StackPane styleClass="logo-container">
                         <ImageView fitHeight="60" fitWidth="60" preserveRatio="true" styleClass="app-logo">
-                            <!-- Replace with actual logo path -->
-                            <Image url="@../images/google.png" />
+                            <Image url="@../images/logo.png" /> <!-- Ensure logo.png exists in resources -->
                         </ImageView>
                     </StackPane>
 
@@ -60,11 +59,21 @@
                     <!-- Error Message -->
                     <Label fx:id="errorLabel" text="" styleClass="error-label" wrapText="true" />
 
-                    <!-- Login Button -->
-                    <Button fx:id="loginButton" text="Login" onAction="#handleLogin" styleClass="login-button" maxWidth="Infinity" />
+                    <!-- Login Buttons -->
+                    <VBox spacing="10">
+                        <Button fx:id="loginButton" text="Login" onAction="#handleLogin" styleClass="login-button" maxWidth="Infinity" />
+                        <Button fx:id="googleLoginButton" text="Login with Google" onAction="#handleGoogleLogin" styleClass="google-button" maxWidth="Infinity">
+                            <graphic>
+                                <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
+                                    <Image url="@../images/google.png" /> <!-- Add Google icon to resources -->
+                                </ImageView>
+                            </graphic>
+                        </Button>
+                        <Button fx:id="mfaButton" text="Complete MFA" onAction="#handleMFA" styleClass="mfa-button" maxWidth="Infinity" disable="true" />
+                    </VBox>
 
                     <!-- Loading Indicator -->
-                    <StackPane>
+                    <StackPane alignment="CENTER">
                         <ProgressIndicator fx:id="loadingIndicator" visible="false" styleClass="loading-indicator" />
                     </StackPane>
                 </VBox>
@@ -74,7 +83,7 @@
                     <padding>
                         <Insets top="30" />
                     </padding>
-                    <Label text="Don't have an account?" />
+                    <Label text="Don't have an account?" styleClass="signup-label" />
                     <Hyperlink text="Sign up" onAction="#handleSignUp" styleClass="signup-link" />
                 </HBox>
             </VBox>

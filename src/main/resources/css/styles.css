@@ -678,3 +678,139 @@
 .quit-button:hover {
     -fx-background-color: #cc0000;
 }
+
+.google-button {
+    -fx-background-color: #4285f4; /* Google blue */
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 10px;
+    -fx-background-radius: 5px;
+}
+
+.google-button:hover {
+    -fx-background-color: #357abd;
+}
+
+.mfa-button {
+    -fx-background-color: #fbbc05; /* Yellow for MFA */
+    -fx-text-fill: black;
+    -fx-font-size: 14px;
+    -fx-padding: 10px;
+    -fx-background-radius: 5px;
+}
+
+.mfa-button:hover {
+    -fx-background-color: #e0a800;
+}
+
+.mfa-button:disabled {
+    -fx-opacity: 0.6;
+}
+
+.admin-container, .instructor-container {
+    -fx-max-width: 800px;
+    -fx-alignment: center;
+}
+
+.section {
+    -fx-background-color: #f9f9f9;
+    -fx-padding: 15px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.form-grid {
+    -fx-alignment: center-left;
+}
+
+.field-label {
+    -fx-font-size: 14px;
+}
+
+.text-field {
+    -fx-pref-width: 300px;
+}
+
+.feedback-label {
+    -fx-font-size: 14px;
+}
+
+.logout-button {
+    -fx-background-color: #dc3545;
+    -fx-text-fill: white;
+}
+
+.logout-button:hover {
+    -fx-background-color: #c82333;
+}
+
+.root {
+    -fx-background-color: #f0f0f0;
+}
+
+.dashboard-header {
+    -fx-background-color: #0078d7;
+    -fx-padding: 10;
+}
+
+.app-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.admin-container, .instructor-container, .dashboard-content {
+    -fx-max-width: 800px;
+    -fx-alignment: center;
+}
+
+.section {
+    -fx-background-color: #f9f9f9;
+    -fx-padding: 15px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.form-grid {
+    -fx-alignment: center-left;
+}
+
+.field-label {
+    -fx-font-size: 14px;
+}
+
+.text-field {
+    -fx-pref-width: 300px;
+}
+
+.primary-button {
+    -fx-background-color: #0078d7;
+    -fx-text-fill: white;
+}
+
+.primary-button:hover {
+    -fx-background-color: #005ba1;
+}
+
+.feedback-label {
+    -fx-font-size: 14px;
+}
+
+.logout-button {
+    -fx-background-color: #dc3545;
+    -fx-text-fill: white;
+}
+
+.logout-button:hover {
+    -fx-background-color: #c82333;
+}

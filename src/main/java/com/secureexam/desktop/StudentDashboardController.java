@@ -1,5 +1,10 @@
 package com.secureexam.desktop;
 
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.cloud.FirestoreClient;
 import javafx.animation.FadeTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -17,6 +22,10 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,41 +47,41 @@ public class StudentDashboardController {
     @FXML private StackPane emptyResultsPlaceholder;
     @FXML private VBox resultCard1;
     @FXML private VBox resultCard2;
+    @FXML private TextField examCodeField;
 
     private ScheduledExecutorService tokenRefreshScheduler;
+    private Firestore db;
+    private Map<String, String> userAttributes;
+    private Map<String, String> examIdMap;
 
     @FXML
     private void initialize() {
         try {
-            // Set up exam list
-            ObservableList<String> testSeries = FXCollections.observableArrayList(TestManager.getTestSeries());
-            if (testSeries == null || testSeries.isEmpty()) {
-                LOGGER.warning("No test series available; showing empty list");
-                testSeries = FXCollections.observableArrayList("No exams available");
-            }
-            examListView.setItems(testSeries);
-            examCountLabel.setText(testSeries.size() + " exams");
+            db = FirestoreClient.getFirestore();
+            examIdMap = new HashMap<>();
 
-            // Enable/disable Start Exam button based on selection
+            examListView.setItems(FXCollections.observableArrayList());
             examListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
                 startExamButton.setDisable(newVal == null || newVal.equals("No exams available"));
             });
 
-            // Populate sort and filter options
             sortComboBox.setItems(FXCollections.observableArrayList("Date", "Name", "Difficulty"));
             filterComboBox.setItems(FXCollections.observableArrayList("All", "Upcoming", "Completed"));
 
-            // Set user name (placeholder; fetch from Firebase in future)
-            userMenuButton.setText("John Doe");
+            if (userAttributes != null && userAttributes.containsKey("email")) {
+                userMenuButton.setText(userAttributes.get("email"));
+            } else {
+                userMenuButton.setText("John Doe");
+            }
 
-            // Token refresh scheduler
+            loadExams();
+
             tokenRefreshScheduler = Executors.newSingleThreadScheduledExecutor();
             tokenRefreshScheduler.scheduleAtFixedRate(() -> {
                 Stage stage = (Stage) examListView.getScene().getWindow();
                 LoginController.refreshToken(stage, () -> LOGGER.info("Token refreshed successfully"));
             }, 50, 50, TimeUnit.MINUTES);
 
-            // Maintain fullscreen lockdown
             Stage stage = (Stage) examListView.getScene().getWindow();
             stage.setFullScreen(true);
             stage.setFullScreenExitHint("");
@@ -82,11 +91,59 @@ public class StudentDashboardController {
                 e.consume();
             });
 
-            // Update results visibility (placeholder)
             updateResultsVisibility();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error initializing dashboard", e);
             showAlert(Alert.AlertType.ERROR, "Initialization Error", "Failed to load dashboard: " + e.getMessage());
+        }
+    }
+
+    public void setUserAttributes(Map<String, String> attributes) {
+        this.userAttributes = attributes;
+    }
+
+    private void loadExams() {
+        try {
+            if (userAttributes == null) {
+                LOGGER.warning("User attributes not set; showing empty exam list");
+                examListView.setItems(FXCollections.observableArrayList("No exams available"));
+                examCountLabel.setText("0 exams");
+                return;
+            }
+
+            String stream = userAttributes.get("stream");
+            String branch = userAttributes.get("branch");
+            String course = userAttributes.get("course");
+            String className = userAttributes.get("class");
+            String section = userAttributes.get("section");
+
+            List<QueryDocumentSnapshot> exams = db.collection("exams")
+                    .whereEqualTo("stream", stream)
+                    .whereEqualTo("branch", branch)
+                    .whereEqualTo("course", course)
+                    .whereEqualTo("class", className)
+                    .whereEqualTo("section", section)
+                    .get()
+                    .get()
+                    .getDocuments();
+
+            ObservableList<String> testSeries = FXCollections.observableArrayList();
+            examIdMap.clear();
+            if (exams.isEmpty()) {
+                LOGGER.warning("No exams available for user attributes: " + userAttributes);
+                testSeries.add("No exams available");
+            } else {
+                for (DocumentSnapshot exam : exams) {
+                    String examName = exam.getString("name");
+                    testSeries.add(examName);
+                    examIdMap.put(examName, exam.getString("examId"));
+                }
+            }
+            examListView.setItems(testSeries);
+            examCountLabel.setText(testSeries.size() + " exams");
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.log(Level.SEVERE, "Error loading exams from Firestore", e);
+            showAlert(Alert.AlertType.ERROR, "Exam Load Error", "Failed to load exams: " + e.getMessage());
         }
     }
 
@@ -99,18 +156,58 @@ public class StudentDashboardController {
             return;
         }
 
+        String enteredCode = examCodeField.getText().trim();
+        if (enteredCode.isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "Exam Code Error", "Please enter the exam code.");
+            return;
+        }
+
         try {
+            DocumentSnapshot examDoc = db.collection("exams")
+                    .whereEqualTo("name", selectedTestSeries)
+                    .whereEqualTo("stream", userAttributes.get("stream"))
+                    .whereEqualTo("branch", userAttributes.get("branch"))
+                    .whereEqualTo("course", userAttributes.get("course"))
+                    .whereEqualTo("class", userAttributes.get("class"))
+                    .whereEqualTo("section", userAttributes.get("section"))
+                    .get()
+                    .get()
+                    .getDocuments()
+                    .get(0);
+
+            String correctCode = examDoc.getString("code");
+            if (!enteredCode.equals(correctCode)) {
+                logFailedAttempt(selectedTestSeries, enteredCode);
+                showAlert(Alert.AlertType.ERROR, "Exam Code Error", "Invalid exam code. Please try again.");
+                return;
+            }
+
+            String examId = examDoc.getString("examId");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/exam.fxml"));
             Parent root = loader.load();
             ExamController examController = loader.getController();
-            examController.setTestSeries(selectedTestSeries);
+            examController.setExamDetails(selectedTestSeries, examId, correctCode);
             Stage stage = (Stage) startExamButton.getScene().getWindow();
             Scene newScene = new Scene(root);
             stage.setScene(newScene);
-            // Fullscreen already enforced; ExamController will maintain lockdown
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Error loading exam interface", e);
+            LOGGER.info("Started exam: " + selectedTestSeries + " with examId: " + examId);
+        } catch (IOException | InterruptedException | ExecutionException e) {
+            LOGGER.log(Level.SEVERE, "Error starting exam", e);
             showAlert(Alert.AlertType.ERROR, "Exam Error", "Failed to start exam: " + e.getMessage());
+        }
+    }
+
+    private void logFailedAttempt(String examName, String enteredCode) {
+        try {
+            String idToken = LoginController.getIdToken();
+            String uid = (idToken != null && !idToken.isEmpty()) ?
+                    FirebaseAuth.getInstance().verifyIdToken(idToken).getUid() : "unknown";
+            db.collection("audit_logs").document().set(
+                    new AuditLog(uid, "exam_code_validation_failed", examName, enteredCode, System.currentTimeMillis())
+            );
+            LOGGER.info("Logged failed exam code attempt for exam: " + examName);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to log audit event", e);
         }
     }
 
@@ -127,7 +224,7 @@ public class StudentDashboardController {
                     }
                     Parent root = FXMLLoader.load(getClass().getResource("/fxml/login.fxml"));
                     Stage stage = (Stage) userMenuButton.getScene().getWindow();
-                    stage.setFullScreen(false); // Release fullscreen
+                    stage.setFullScreen(false);
                     Scene newScene = new Scene(root, 800, 600);
                     FadeTransition fadeIn = new FadeTransition(Duration.millis(500), root);
                     fadeIn.setFromValue(0.0);
@@ -164,7 +261,6 @@ public class StudentDashboardController {
     @FXML
     private void handleMyExams(ActionEvent event) {
         LOGGER.info("My Exams sidebar button clicked");
-        // Placeholder: Refresh exam list (future: filter to user's exams)
         refreshExamList();
         showAlert(Alert.AlertType.INFORMATION, "My Exams", "Displaying your available exams.");
     }
@@ -207,25 +303,12 @@ public class StudentDashboardController {
     }
 
     private void refreshExamList() {
-        try {
-            ObservableList<String> testSeries = FXCollections.observableArrayList(TestManager.getTestSeries());
-            if (testSeries == null || testSeries.isEmpty()) {
-                LOGGER.warning("No test series available on refresh");
-                testSeries = FXCollections.observableArrayList("No exams available");
-            }
-            examListView.setItems(testSeries);
-            examCountLabel.setText(testSeries.size() + " exams");
-            updateResultsVisibility();
-            showAlert(Alert.AlertType.INFORMATION, "Refresh", "Exam list refreshed successfully.");
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error refreshing exam list", e);
-            showAlert(Alert.AlertType.ERROR, "Refresh Error", "Failed to refresh exams: " + e.getMessage());
-        }
+        loadExams();
+        showAlert(Alert.AlertType.INFORMATION, "Refresh", "Exam list refreshed successfully.");
     }
 
     private void updateResultsVisibility() {
-        // Placeholder logic; replace with backend data post-MVP
-        boolean hasResults = false; // Simulate no results for now
+        boolean hasResults = false; // Placeholder logic
         emptyResultsPlaceholder.setVisible(!hasResults);
         resultCard1.setVisible(hasResults);
         resultCard2.setVisible(hasResults);
@@ -241,11 +324,37 @@ public class StudentDashboardController {
         });
     }
 
-    // Cleanup method for app shutdown (optional, call from MainApp if exists)
     public void shutdown() {
         if (tokenRefreshScheduler != null && !tokenRefreshScheduler.isShutdown()) {
             tokenRefreshScheduler.shutdownNow();
             LOGGER.info("StudentDashboardController shutdown complete");
         }
     }
+}
+
+class AuditLog {
+    private String userId;
+    private String action;
+    private String examName;
+    private String enteredCode;
+    private long timestamp;
+
+    public AuditLog(String userId, String action, String examName, String enteredCode, long timestamp) {
+        this.userId = userId;
+        this.action = action;
+        this.examName = examName;
+        this.enteredCode = enteredCode;
+        this.timestamp = timestamp;
+    }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
+    public String getAction() { return action; }
+    public void setAction(String action) { this.action = action; }
+    public String getExamName() { return examName; }
+    public void setExamName(String examName) { this.examName = examName; }
+    public String getEnteredCode() { return enteredCode; }
+    public void setEnteredCode(String enteredCode) { this.enteredCode = enteredCode; }
+    public long getTimestamp() { return timestamp; }
+    public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
 }

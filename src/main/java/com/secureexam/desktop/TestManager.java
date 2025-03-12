@@ -1,12 +1,10 @@
 package com.secureexam.desktop;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,109 +13,58 @@ import java.util.logging.Logger;
  */
 public class TestManager {
     private static final Logger LOGGER = Logger.getLogger(TestManager.class.getName());
-    private static final List<Question> DEFAULT_QUESTIONS = initializeDefaultQuestions();
+    private static Firestore db;
 
-    private static List<Question> initializeDefaultQuestions() {
-        List<Question> defaults = new ArrayList<>();
-        try {
-            defaults.add(new Question("default123", "What is the capital of France?",
-                    new String[]{"Paris", "Florida", "Python", "MongoDB"}, "Paris"));
-            defaults.add(new Question("default123", "What is 2 + 2?",
-                    new String[]{"3", "4", "5", "6"}, "4"));
-        } catch (IllegalArgumentException e) {
-            LOGGER.log(Level.SEVERE, "Failed to initialize default questions", e);
-        }
-        return Collections.unmodifiableList(defaults);
+    static {
+        db = FirestoreClient.getFirestore();
     }
 
-    public static List<Question> getQuestionsForTestSeries(String testSeries) {
-        if (testSeries == null || testSeries.trim().isEmpty()) {
-            LOGGER.warning("Test series is null or empty; returning default questions");
-            return new ArrayList<>(DEFAULT_QUESTIONS);
+    public static List<Question> getQuestionsForTestSeries(String examId) {
+        if (examId == null || examId.trim().isEmpty()) {
+            LOGGER.warning("Exam ID is null or empty; returning empty list");
+            return new ArrayList<>();
         }
 
-        String trimmedSeries = testSeries.trim();
-        List<Question> questions = new ArrayList<>();
         try {
-            switch (trimmedSeries) {
-                case "Math Test Series":
-                    questions.add(new Question("math123", "What is 2 + 2?",
-                            new String[]{"1", "2", "3", "4"}, "4"));
-                    questions.add(new Question("math123", "Solve: 5 × 3",
-                            new String[]{"10", "15", "20", "25"}, "15"));
-                    questions.add(new Question("math123", "What is the square root of 16?",
-                            new String[]{"2", "4", "6", "8"}, "4"));
-                    questions.add(new Question("math123", "What is 10 - 7?",
-                            new String[]{"1", "2", "3", "4"}, "3"));
-                    questions.add(new Question("math123", "What is 12 ÷ 4?",
-                            new String[]{"2", "3", "4", "6"}, "3"));
-                    break;
-
-                case "Science Test Series":
-                    questions.add(new Question("sci123", "What is H2O?",
-                            new String[]{"Salt", "Sugar", "Water", "Oil"}, "Water"));
-                    questions.add(new Question("sci123", "Which planet is closest to the Sun?",
-                            new String[]{"Earth", "Mars", "Mercury", "Venus"}, "Mercury"));
-                    questions.add(new Question("sci123", "What gas do plants absorb?",
-                            new String[]{"Oxygen", "Carbon Dioxide", "Nitrogen", "Helium"}, "Carbon Dioxide"));
-                    questions.add(new Question("sci123", "What is the boiling point of water?",
-                            new String[]{"50°C", "75°C", "100°C", "125°C"}, "100°C"));
-                    questions.add(new Question("sci123", "What is the primary source of Earth's energy?",
-                            new String[]{"Moon", "Sun", "Wind", "Water"}, "Sun"));
-                    break;
-
-                case "History Test Series":
-                    questions.add(new Question("hist123", "Who discovered America?",
-                            new String[]{"Columbus", "Vasco da Gama", "Magellan", "Cook"}, "Columbus"));
-                    questions.add(new Question("hist123", "In which year did World War II end?",
-                            new String[]{"1940", "1945", "1950", "1955"}, "1945"));
-                    questions.add(new Question("hist123", "What was the ancient name of Iraq?",
-                            new String[]{"Persia", "Mesopotamia", "Egypt", "Rome"}, "Mesopotamia"));
-                    questions.add(new Question("hist123", "Who was the first President of the USA?",
-                            new String[]{"Lincoln", "Washington", "Jefferson", "Adams"}, "Washington"));
-                    questions.add(new Question("hist123", "What event started World War I?",
-                            new String[]{"Pearl Harbor", "Assassination of Archduke Franz Ferdinand", "Invasion of Poland", "Treaty of Versailles"}, "Assassination of Archduke Franz Ferdinand"));
-                    break;
-
-                default:
-                    LOGGER.warning("Unknown test series: " + trimmedSeries + "; returning default questions");
-                    return new ArrayList<>(DEFAULT_QUESTIONS);
+            DocumentSnapshot examDoc = db.collection("exams").document(examId).get().get();
+            if (!examDoc.exists()) {
+                LOGGER.warning("No exam found for examId: " + examId);
+                return new ArrayList<>();
             }
 
-            if (questions.isEmpty()) {
-                LOGGER.warning("No questions found for test series: " + trimmedSeries + "; returning default questions");
-                return new ArrayList<>(DEFAULT_QUESTIONS);
+            List<Map<String, Object>> questionData = (List<Map<String, Object>>) examDoc.get("questions");
+            if (questionData == null || questionData.isEmpty()) {
+                LOGGER.warning("No questions found for examId: " + examId);
+                return new ArrayList<>();
             }
 
+            List<Question> questions = new ArrayList<>();
+            for (Map<String, Object> q : questionData) {
+                List<String> options = (List<String>) q.get("options");
+                Question question = new Question(
+                        examId,
+                        (String) q.get("text"),
+                        options.toArray(new String[0]),
+                        (String) q.get("correctAnswer")
+                );
+                questions.add(question);
+            }
+
+            // Randomize questions
             Collections.shuffle(questions);
+            // Randomize options for each question
             for (Question q : questions) {
-                try {
-                    List<String> opts = new ArrayList<>(Arrays.asList(q.getOptions()));
-                    Collections.shuffle(opts);
-                    q.setOptions(opts.toArray(new String[0]));
-                } catch (IllegalArgumentException e) {
-                    LOGGER.log(Level.SEVERE, "Failed to shuffle options for question: " + q.getText(), e);
-                }
+                List<String> opts = new ArrayList<>(Arrays.asList(q.getOptions()));
+                Collections.shuffle(opts);
+                q.setOptions(opts.toArray(new String[0]));
             }
-            LOGGER.info("Loaded " + questions.size() + " questions for " + trimmedSeries);
+
+            LOGGER.info("Loaded " + questions.size() + " questions for examId: " + examId);
             return questions;
 
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error loading questions for test series: " + trimmedSeries, e);
-            return new ArrayList<>(DEFAULT_QUESTIONS);
-        }
-    }
-
-    public static ObservableList<String> getTestSeries() {
-        try {
-            ObservableList<String> testSeries = FXCollections.observableArrayList(
-                    "Math Test Series", "Science Test Series", "History Test Series");
-            FXCollections.sort(testSeries, String::compareToIgnoreCase);
-            LOGGER.info("Retrieved " + testSeries.size() + " test series");
-            return testSeries;
-        } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Error retrieving test series", e);
-            return FXCollections.observableArrayList("Default Test Series");
+            LOGGER.log(Level.SEVERE, "Error loading questions for examId: " + examId, e);
+            return new ArrayList<>();
         }
     }
 }

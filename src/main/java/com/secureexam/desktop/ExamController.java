@@ -1,5 +1,8 @@
 package com.secureexam.desktop;
 
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -46,16 +49,22 @@ public class ExamController {
     private List<String> userAnswers;
     private List<Boolean> flaggedQuestions;
     private String testSeries;
+    private String examId;
+    private String examCode;
     private int focusLossCount = 0;
     private boolean isExamActive = false;
+    private Firestore db;
 
-    public void setTestSeries(String testSeries) {
+    public void setExamDetails(String testSeries, String examId, String examCode) {
         this.testSeries = testSeries;
-        initializeQuestions();
+        this.examId = examId;
+        this.examCode = examCode;
     }
 
     @FXML
     private void initialize() {
+        db = FirestoreClient.getFirestore();
+
         // Ensure ToggleGroup is set up if FXML injection fails
         if (optionsGroup == null) {
             LOGGER.severe("optionsGroup injection failed; creating fallback");
@@ -65,21 +74,45 @@ public class ExamController {
             option3.setToggleGroup(optionsGroup);
             option4.setToggleGroup(optionsGroup);
         }
-        if (testSeries != null) {
+
+        if (examId != null && examCode != null) {
+            if (!validateExamCode()) {
+                LOGGER.severe("Exam code validation failed; returning to dashboard");
+                returnToDashboard();
+                return;
+            }
             initializeQuestions();
             setupLockdown();
         } else {
-            LOGGER.warning("Test series not set during initialization");
+            LOGGER.warning("Exam details not set during initialization");
+            showAlert(Alert.AlertType.ERROR, "Exam Error", "Exam details missing. Returning to dashboard.");
+            returnToDashboard();
+        }
+    }
+
+    private boolean validateExamCode() {
+        try {
+            DocumentSnapshot examDoc = db.collection("exams").document(examId).get().get();
+            if (!examDoc.exists() || !examCode.equals(examDoc.getString("code"))) {
+                LOGGER.warning("Invalid exam code for examId: " + examId);
+                showAlert(Alert.AlertType.ERROR, "Validation Error", "Invalid exam session. Returning to dashboard.");
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Error validating exam code", e);
+            showAlert(Alert.AlertType.ERROR, "Validation Error", "Failed to validate exam session: " + e.getMessage());
+            return false;
         }
     }
 
     private void initializeQuestions() {
         try {
-            questions = TestManager.getQuestionsForTestSeries(testSeries);
+            questions = TestManager.getQuestionsForTestSeries(examId);
             if (questions == null || questions.isEmpty()) {
-                LOGGER.severe("No questions loaded for test series: " + testSeries);
+                LOGGER.severe("No questions loaded for examId: " + examId);
                 showAlert(Alert.AlertType.ERROR, "Exam Error", "No questions available. Exiting exam.");
-                Platform.exit();
+                returnToDashboard();
                 return;
             }
             userAnswers = new ArrayList<>(questions.size());
@@ -95,7 +128,7 @@ public class ExamController {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize questions", e);
             showAlert(Alert.AlertType.ERROR, "Initialization Error", "Unable to start exam: " + e.getMessage());
-            Platform.exit();
+            returnToDashboard();
         }
     }
 

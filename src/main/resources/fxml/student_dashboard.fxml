@@ -140,8 +140,12 @@
                             <Label fx:id="examCountLabel" text="5 exams" styleClass="count-label" />
                         </HBox>
 
-                        <VBox styleClass="exam-list-container">
+                        <VBox styleClass="exam-list-container" spacing="10">
                             <ListView fx:id="examListView" styleClass="exam-list-view" VBox.vgrow="ALWAYS" />
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Exam Code:" styleClass="exam-code-label" />
+                                <TextField fx:id="examCodeField" promptText="Enter exam code" styleClass="exam-code-field" />
+                            </HBox>
                         </VBox>
 
                         <HBox spacing="15" alignment="CENTER_RIGHT" styleClass="action-buttons">
