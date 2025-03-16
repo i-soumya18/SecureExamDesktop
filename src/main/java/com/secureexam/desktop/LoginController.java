@@ -8,7 +8,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCombination;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import okhttp3.*;
@@ -51,13 +50,12 @@ public class LoginController {
     @FXML private Button mfaButton;
     @FXML private CheckBox rememberMeCheckbox;
 
-    // Static initialization for Firebase
     static {
         try {
             FileInputStream serviceAccount = new FileInputStream("src/main/resources/firebase/assistant-65908-firebase-adminsdk-w999m-181efe1e50.json");
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setDatabaseUrl("https://assistant-65908.firebaseio.com") // Update with your project ID
+                    .setDatabaseUrl("https://assistant-65908.firebaseio.com")
                     .build();
             FirebaseApp.initializeApp(options);
             db = FirestoreClient.getFirestore();
@@ -65,6 +63,7 @@ public class LoginController {
             LOGGER.info("Firebase initialized successfully");
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize Firebase", e);
+            Platform.runLater(() -> showFatalError("Firebase initialization failed: " + e.getMessage()));
             throw new RuntimeException("Firebase initialization failed", e);
         }
     }
@@ -74,7 +73,7 @@ public class LoginController {
         errorLabel.setText("");
         loadingIndicator.setVisible(false);
         googleLoginButton.setDisable(false);
-        mfaButton.setDisable(true); // Enabled after email/password login
+        mfaButton.setDisable(true);
     }
 
     @FXML
@@ -87,10 +86,7 @@ public class LoginController {
             return;
         }
 
-        loadingIndicator.setVisible(true);
-        loginButton.setDisable(true);
-        googleLoginButton.setDisable(true);
-
+        setLoadingState(true);
         new Thread(() -> {
             try {
                 JSONObject json = new JSONObject()
@@ -103,45 +99,39 @@ public class LoginController {
                         .post(body)
                         .build();
                 try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        String responseBody = response.body().string();
+                        JSONObject result = new JSONObject(responseBody);
+                        String errorMessage = result.getJSONObject("error").getString("message");
+                        throw new IOException("Login failed: " + errorMessage);
+                    }
                     String responseBody = response.body().string();
                     JSONObject result = new JSONObject(responseBody);
-                    if (response.isSuccessful()) {
-                        idToken = result.getString("idToken");
-                        refreshToken = result.getString("refreshToken");
-                        String uid = result.getString("localId");
-                        if (rememberMeCheckbox.isSelected()) {
-                            LOGGER.info("Remember me selected; storing refreshToken (placeholder)");
-                            // TODO: Encrypt and store refreshToken locally
-                        }
-                        fetchUserData(uid, email);
-                    } else {
-                        String errorMessage = result.getJSONObject("error").getString("message");
-                        Platform.runLater(() -> showError("Login failed: " + errorMessage));
+                    idToken = result.getString("idToken");
+                    refreshToken = result.getString("refreshToken");
+                    String uid = result.getString("localId");
+                    if (rememberMeCheckbox.isSelected()) {
+                        LOGGER.info("Remember me selected; storing refreshToken (placeholder)");
+                        // TODO: Encrypt and store refreshToken locally
                     }
+                    fetchUserData(uid, email);
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Login request failed", e);
                 Platform.runLater(() -> showError("Login failed: " + e.getMessage()));
             } finally {
-                Platform.runLater(() -> {
-                    loadingIndicator.setVisible(false);
-                    loginButton.setDisable(false);
-                    googleLoginButton.setDisable(false);
-                });
+                Platform.runLater(() -> setLoadingState(false));
             }
         }).start();
     }
 
     @FXML
     private void handleGoogleLogin(ActionEvent event) {
-        loadingIndicator.setVisible(true);
-        loginButton.setDisable(true);
-        googleLoginButton.setDisable(true);
-
+        setLoadingState(true);
         new Thread(() -> {
             try {
-                // Placeholder for Google login (requires OAuth flow in a real app)
-                String googleToken = "mock-google-token"; // Replace with actual Google token
+                // Placeholder for Google OAuth flow
+                String googleToken = "mock-google-token"; // Replace with actual Google OAuth implementation
                 JSONObject json = new JSONObject()
                         .put("postBody", "id_token=" + googleToken + "&providerId=google.com")
                         .put("requestUri", "http://localhost")
@@ -152,28 +142,25 @@ public class LoginController {
                         .post(body)
                         .build();
                 try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        String responseBody = response.body().string();
+                        JSONObject result = new JSONObject(responseBody);
+                        String errorMessage = result.getJSONObject("error").getString("message");
+                        throw new IOException("Google login failed: " + errorMessage);
+                    }
                     String responseBody = response.body().string();
                     JSONObject result = new JSONObject(responseBody);
-                    if (response.isSuccessful()) {
-                        idToken = result.getString("idToken");
-                        refreshToken = result.getString("refreshToken");
-                        String uid = result.getString("localId");
-                        String email = result.getString("email");
-                        fetchUserData(uid, email);
-                    } else {
-                        String errorMessage = result.getJSONObject("error").getString("message");
-                        Platform.runLater(() -> showError("Google login failed: " + errorMessage));
-                    }
+                    idToken = result.getString("idToken");
+                    refreshToken = result.getString("refreshToken");
+                    String uid = result.getString("localId");
+                    String email = result.getString("email");
+                    fetchUserData(uid, email);
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Google login failed", e);
                 Platform.runLater(() -> showError("Google login failed: " + e.getMessage()));
             } finally {
-                Platform.runLater(() -> {
-                    loadingIndicator.setVisible(false);
-                    loginButton.setDisable(false);
-                    googleLoginButton.setDisable(false);
-                });
+                Platform.runLater(() -> setLoadingState(false));
             }
         }).start();
     }
@@ -186,21 +173,16 @@ public class LoginController {
             return;
         }
 
-        loadingIndicator.setVisible(true);
-        mfaButton.setDisable(true);
-
+        setLoadingState(true);
         new Thread(() -> {
             try {
                 auth.generateEmailVerificationLink(email, null);
-                Platform.runLater(() -> showError("MFA email sent! Check your inbox to verify."));
+                Platform.runLater(() -> showSuccess("MFA email sent! Check your inbox to verify."));
             } catch (FirebaseAuthException e) {
                 LOGGER.log(Level.SEVERE, "MFA email failed", e);
                 Platform.runLater(() -> showError("MFA failed: " + e.getMessage()));
             } finally {
-                Platform.runLater(() -> {
-                    loadingIndicator.setVisible(false);
-                    mfaButton.setDisable(false);
-                });
+                Platform.runLater(() -> setLoadingState(false));
             }
         }).start();
     }
@@ -215,9 +197,7 @@ public class LoginController {
             return;
         }
 
-        loadingIndicator.setVisible(true);
-        loginButton.setDisable(true);
-
+        setLoadingState(true);
         new Thread(() -> {
             try {
                 JSONObject json = new JSONObject()
@@ -230,32 +210,30 @@ public class LoginController {
                         .post(body)
                         .build();
                 try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        String responseBody = response.body().string();
+                        JSONObject result = new JSONObject(responseBody);
+                        String errorMessage = result.getJSONObject("error").getString("message");
+                        throw new IOException("Sign-up failed: " + errorMessage);
+                    }
                     String responseBody = response.body().string();
                     JSONObject result = new JSONObject(responseBody);
-                    if (response.isSuccessful()) {
-                        String uid = result.getString("localId");
-                        Map<String, Object> userData = new HashMap<>();
-                        userData.put("role", "student");
-                        userData.put("email", email);
-                        db.collection("users").document(uid).set(userData);
-                        Platform.runLater(() -> {
-                            showError("Sign-up successful! Please log in.");
-                            emailField.clear();
-                            passwordField.clear();
-                        });
-                    } else {
-                        String errorMessage = result.getJSONObject("error").getString("message");
-                        Platform.runLater(() -> showError("Sign-up failed: " + errorMessage));
-                    }
+                    String uid = result.getString("localId");
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("role", "student");
+                    userData.put("email", email);
+                    db.collection("users").document(uid).set(userData).get();
+                    Platform.runLater(() -> {
+                        showSuccess("Sign-up successful! Please log in.");
+                        emailField.clear();
+                        passwordField.clear();
+                    });
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Sign-up request failed", e);
                 Platform.runLater(() -> showError("Sign-up failed: " + e.getMessage()));
             } finally {
-                Platform.runLater(() -> {
-                    loadingIndicator.setVisible(false);
-                    loginButton.setDisable(false);
-                });
+                Platform.runLater(() -> setLoadingState(false));
             }
         }).start();
     }
@@ -268,9 +246,7 @@ public class LoginController {
             return;
         }
 
-        loadingIndicator.setVisible(true);
-        loginButton.setDisable(true);
-
+        setLoadingState(true);
         new Thread(() -> {
             try {
                 JSONObject json = new JSONObject()
@@ -282,23 +258,19 @@ public class LoginController {
                         .post(body)
                         .build();
                 try (Response response = client.newCall(request).execute()) {
-                    String responseBody = response.body().string();
-                    JSONObject result = new JSONObject(responseBody);
-                    if (response.isSuccessful()) {
-                        Platform.runLater(() -> showError("Password reset email sent! Check your inbox."));
-                    } else {
+                    if (!response.isSuccessful()) {
+                        String responseBody = response.body().string();
+                        JSONObject result = new JSONObject(responseBody);
                         String errorMessage = result.getJSONObject("error").getString("message");
-                        Platform.runLater(() -> showError("Reset failed: " + errorMessage));
+                        throw new IOException("Reset failed: " + errorMessage);
                     }
+                    Platform.runLater(() -> showSuccess("Password reset email sent! Check your inbox."));
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Password reset request failed", e);
                 Platform.runLater(() -> showError("Reset failed: " + e.getMessage()));
             } finally {
-                Platform.runLater(() -> {
-                    loadingIndicator.setVisible(false);
-                    loginButton.setDisable(false);
-                });
+                Platform.runLater(() -> setLoadingState(false));
             }
         }).start();
     }
@@ -323,7 +295,7 @@ public class LoginController {
                 Map<String, Object> userData = new HashMap<>();
                 userData.put("role", "student");
                 userData.put("email", email);
-                db.collection("users").document(uid).set(userData);
+                db.collection("users").document(uid).set(userData).get();
                 role = "student";
             }
             LOGGER.info("User role: " + role + ", attributes: " + attributes);
@@ -338,35 +310,33 @@ public class LoginController {
         try {
             FXMLLoader loader;
             Parent root;
+            Object controller = null;
             switch (role) {
                 case "admin":
                     loader = new FXMLLoader(getClass().getResource("/fxml/admin.fxml"));
                     root = loader.load();
+                    controller = loader.getController();
                     break;
                 case "examiner":
                     loader = new FXMLLoader(getClass().getResource("/fxml/instructor_dashboard.fxml"));
                     root = loader.load();
-                    InstructorDashboardController instructorController = loader.getController();
-                    instructorController.setUserAttributes(attributes);
+                    controller = loader.getController();
+                    ((InstructorDashboardController) controller).setUserAttributes(attributes);
                     break;
                 case "student":
                 default:
                     loader = new FXMLLoader(getClass().getResource("/fxml/student_dashboard.fxml"));
                     root = loader.load();
-                    StudentDashboardController studentController = loader.getController();
-                    studentController.setUserAttributes(attributes);
+                    controller = loader.getController();
+                    ((StudentDashboardController) controller).setUserAttributes(attributes);
                     break;
             }
             Stage stage = (Stage) loginButton.getScene().getWindow();
-            Scene newScene = new Scene(root);
+            Scene newScene = new Scene(root, 800, 600);
             stage.setScene(newScene);
-            stage.setFullScreen(true);
-            stage.setFullScreenExitHint("");
-            stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
-            stage.setOnCloseRequest(e -> {
-                LOGGER.warning("Attempted window close blocked");
-                e.consume();
-            });
+            stage.setResizable(true);
+            stage.setOnCloseRequest(null); // Allow normal window closing
+            stage.show();
 
             if (tokenRefreshScheduler == null || tokenRefreshScheduler.isShutdown()) {
                 tokenRefreshScheduler = Executors.newSingleThreadScheduledExecutor();
@@ -380,12 +350,30 @@ public class LoginController {
         }
     }
 
+    private void setLoadingState(boolean isLoading) {
+        loadingIndicator.setVisible(isLoading);
+        loginButton.setDisable(isLoading);
+        googleLoginButton.setDisable(isLoading);
+        mfaButton.setDisable(!isLoading); // Enable MFA button only after login attempt
+    }
+
     private void showError(String message) {
         errorLabel.setText(message);
-        loadingIndicator.setVisible(false);
-        loginButton.setDisable(false);
-        googleLoginButton.setDisable(false);
-        mfaButton.setDisable(true);
+        errorLabel.setStyle("-fx-text-fill: red;");
+    }
+
+    private void showSuccess(String message) {
+        errorLabel.setText(message);
+        errorLabel.setStyle("-fx-text-fill: green;");
+    }
+
+    private static void showFatalError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Fatal Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+        Platform.exit();
     }
 
     public static String getIdToken() {
@@ -420,16 +408,17 @@ public class LoginController {
                         .post(body)
                         .build();
                 try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        String responseBody = response.body().string();
+                        JSONObject result = new JSONObject(responseBody);
+                        String errorMessage = result.getJSONObject("error").getString("message");
+                        throw new IOException("Token refresh failed: " + errorMessage);
+                    }
                     String responseBody = response.body().string();
                     JSONObject result = new JSONObject(responseBody);
-                    if (response.isSuccessful()) {
-                        idToken = result.getString("id_token");
-                        refreshToken = result.getString("refresh_token");
-                        Platform.runLater(onSuccess::run);
-                    } else {
-                        LOGGER.warning("Token refresh failed: " + result.getJSONObject("error").getString("message"));
-                        Platform.runLater(() -> navigateToLogin(stage));
-                    }
+                    idToken = result.getString("id_token");
+                    refreshToken = result.getString("refresh_token");
+                    Platform.runLater(onSuccess::run);
                 }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "Token refresh failed", e);
@@ -445,11 +434,16 @@ public class LoginController {
             FadeTransition fadeIn = new FadeTransition(Duration.millis(500), root);
             fadeIn.setFromValue(0.0);
             fadeIn.setToValue(1.0);
-            fadeIn.setOnFinished(e -> stage.setScene(newScene));
+            fadeIn.setOnFinished(e -> {
+                stage.setScene(newScene);
+                stage.setResizable(true);
+                stage.setOnCloseRequest(null);
+            });
             fadeIn.play();
             LOGGER.info("Navigated back to login due to token refresh failure");
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to navigate to login", e);
+            Platform.runLater(() -> showFatalError("Failed to return to login: " + e.getMessage()));
         }
     }
 

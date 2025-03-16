@@ -1,80 +1,293 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
-<?import java.net.URL?>
 <?import javafx.scene.text.Text?>
+<?import java.net.URL?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.InstructorDashboardController" styleClass="root">
     <stylesheets>
-        <URL value="@../css/styles.css" />
+        <URL value="@../css/styles.css"/>
     </stylesheets>
 
     <!-- Top Header -->
     <top>
-        <HBox styleClass="dashboard-header">
+        <HBox styleClass="dashboard-header" alignment="CENTER_LEFT">
             <padding>
-                <Insets top="15" right="25" bottom="15" left="25" />
+                <Insets top="20" right="30" bottom="20" left="30"/>
             </padding>
-            <Text text="Instructor Dashboard" styleClass="app-title" />
-            <Region HBox.hgrow="ALWAYS" />
-            <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout" styleClass="logout-button" />
+            <Text text="Instructor Dashboard" styleClass="app-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout" styleClass="logout-button"/>
         </HBox>
     </top>
 
     <!-- Main Content -->
     <center>
-        <VBox spacing="20" styleClass="instructor-container">
-            <padding>
-                <Insets top="30" right="40" bottom="40" left="40" />
-            </padding>
+        <ScrollPane fitToWidth="true" styleClass="main-scroll-pane">
+            <TabPane fx:id="dashboardTabs" styleClass="tab-pane">
+                <!-- Exam Creation Tab -->
+                <Tab text="Create Exam" closable="false">
+                    <VBox spacing="25" styleClass="instructor-container">
+                        <padding>
+                            <Insets top="30" right="40" bottom="40" left="40"/>
+                        </padding>
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Create New Exam" styleClass="section-title"/>
+                            <GridPane hgap="16" vgap="16" styleClass="form-grid">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="120"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                    <ColumnConstraints minWidth="120"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                </columnConstraints>
+                                <Label text="Exam Name" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="examName" promptText="e.g., Math Test Series" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field"/>
+                                <Label text="Exam Code" GridPane.rowIndex="0" GridPane.columnIndex="2" styleClass="field-label"/>
+                                <TextField fx:id="examCode" promptText="e.g., MATH2025" GridPane.rowIndex="0" GridPane.columnIndex="3" styleClass="text-field"/>
+                                <Label text="Stream" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="examStream" promptText="e.g., Engineering" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field"/>
+                                <Label text="Branch" GridPane.rowIndex="1" GridPane.columnIndex="2" styleClass="field-label"/>
+                                <TextField fx:id="examBranch" promptText="e.g., CSE" GridPane.rowIndex="1" GridPane.columnIndex="3" styleClass="text-field"/>
+                                <Label text="Course" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="examCourse" promptText="e.g., B.Tech" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field"/>
+                                <Label text="Class" GridPane.rowIndex="2" GridPane.columnIndex="2" styleClass="field-label"/>
+                                <TextField fx:id="examClass" promptText="e.g., Semester 4" GridPane.rowIndex="2" GridPane.columnIndex="3" styleClass="text-field"/>
+                                <Label text="Section" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="examSection" promptText="e.g., A" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="text-field"/>
+                            </GridPane>
+                            <HBox alignment="CENTER_RIGHT">
+                                <padding>
+                                    <Insets top="10" right="0" bottom="0" left="0"/>
+                                </padding>
+                                <Button fx:id="createExam" text="Create Exam" onAction="#handleCreateExam" styleClass="primary-button"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </Tab>
 
-            <!-- Create Exam Section -->
-            <VBox spacing="10" styleClass="section">
-                <Text text="Create New Exam" styleClass="section-title" />
-                <GridPane hgap="10" vgap="10" styleClass="form-grid">
-                    <Label text="Exam Name" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examName" promptText="e.g., Math Test Series" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Exam Code" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examCode" promptText="e.g., MATH2025" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Stream" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examStream" promptText="e.g., Engineering" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Branch" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examBranch" promptText="e.g., CSE" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Course" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examCourse" promptText="e.g., B.Tech" GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Class" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examClass" promptText="e.g., Semester 4" GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Section" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="examSection" promptText="e.g., A" GridPane.rowIndex="6" GridPane.columnIndex="1" styleClass="text-field" />
-                </GridPane>
-                <Button fx:id="createExam" text="Create Exam" onAction="#handleCreateExam" styleClass="primary-button" />
-            </VBox>
+                <!-- Add Questions Tab -->
+                <Tab text="Add Questions" closable="false">
+                    <VBox spacing="25" styleClass="instructor-container">
+                        <padding>
+                            <Insets top="30" right="40" bottom="40" left="40"/>
+                        </padding>
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Add Question to Exam" styleClass="section-title"/>
+                            <GridPane hgap="16" vgap="16" styleClass="form-grid">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="120"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                    <ColumnConstraints minWidth="120"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                </columnConstraints>
+                                <Label text="Exam ID" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="questionExamId" promptText="e.g., math123" GridPane.rowIndex="0" GridPane.columnIndex="1" GridPane.columnSpan="3" styleClass="text-field"/>
+                                <Label text="Question Text" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="questionText" promptText="e.g., What is 2 + 2?" GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.columnSpan="3" styleClass="text-field"/>
+                                <Label text="Option 1" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="option1" promptText="e.g., 1" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field"/>
+                                <Label text="Option 2" GridPane.rowIndex="2" GridPane.columnIndex="2" styleClass="field-label"/>
+                                <TextField fx:id="option2" promptText="e.g., 2" GridPane.rowIndex="2" GridPane.columnIndex="3" styleClass="text-field"/>
+                                <Label text="Option 3" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="option3" promptText="e.g., 3" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="text-field"/>
+                                <Label text="Option 4" GridPane.rowIndex="3" GridPane.columnIndex="2" styleClass="field-label"/>
+                                <TextField fx:id="option4" promptText="e.g., 4" GridPane.rowIndex="3" GridPane.columnIndex="3" styleClass="text-field"/>
+                                <Label text="Correct Answer" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="correctAnswer" promptText="e.g., 4" GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="text-field"/>
+                            </GridPane>
+                            <HBox alignment="CENTER_RIGHT" spacing="10">
+                                <padding>
+                                    <Insets top="10" right="0" bottom="0" left="0"/>
+                                </padding>
+                                <Button fx:id="addQuestion" text="Add Question" onAction="#handleAddQuestion" styleClass="primary-button"/>
+                            </HBox>
+                            <VBox spacing="10">
+                                <padding>
+                                    <Insets top="16" right="0" bottom="0" left="0"/>
+                                </padding>
+                                <Text text="Bulk Upload Questions via CSV" styleClass="section-subtitle"/>
+                                <HBox spacing="16">
+                                    <padding>
+                                        <Insets top="8" right="0" bottom="8" left="0"/>
+                                    </padding>
+                                    <Button fx:id="generateQuestionCSVButton" text="Generate Question CSV" onAction="#handleGenerateQuestionCSV" styleClass="secondary-button"/>
+                                    <Button fx:id="uploadQuestionCSVButton" text="Upload Question CSV" onAction="#handleUploadQuestionCSV" styleClass="primary-button"/>
+                                </HBox>
+                                <TextField fx:id="csvExamIdField" promptText="Exam ID for CSV" styleClass="text-field"/>
+                            </VBox>
+                        </VBox>
+                    </VBox>
+                </Tab>
 
-            <!-- Add Question Section -->
-            <VBox spacing="10" styleClass="section">
-                <Text text="Add Question to Exam" styleClass="section-title" />
-                <GridPane hgap="10" vgap="10" styleClass="form-grid">
-                    <Label text="Exam ID" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="questionExamId" promptText="e.g., math123" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Question Text" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="questionText" promptText="e.g., What is 2 + 2?" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Option 1" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="option1" promptText="e.g., 1" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Option 2" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="option2" promptText="e.g., 2" GridPane.rowIndex="3" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Option 3" GridPane.rowIndex="4" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="option3" promptText="e.g., 3" GridPane.rowIndex="4" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Option 4" GridPane.rowIndex="5" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="option4" promptText="e.g., 4" GridPane.rowIndex="5" GridPane.columnIndex="1" styleClass="text-field" />
-                    <Label text="Correct Answer" GridPane.rowIndex="6" GridPane.columnIndex="0" styleClass="field-label" />
-                    <TextField fx:id="correctAnswer" promptText="e.g., 4" GridPane.rowIndex="6" GridPane.columnIndex="1" styleClass="text-field" />
-                </GridPane>
-                <Button fx:id="addQuestion" text="Add Question" onAction="#handleAddQuestion" styleClass="primary-button" />
-            </VBox>
+                <!-- Analytics Tab -->
+                <Tab text="Analytics" closable="false">
+                    <VBox spacing="25" styleClass="instructor-container">
+                        <padding>
+                            <Insets top="30" right="40" bottom="40" left="40"/>
+                        </padding>
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Exam Performance Analytics" styleClass="section-title"/>
+                            <PieChart fx:id="performanceChart" title="Exam Status Distribution" legendVisible="true" labelLineLength="20"/>
+                        </VBox>
+                    </VBox>
+                </Tab>
 
-            <!-- Feedback Label -->
-            <Label fx:id="feedbackLabel" text="" styleClass="feedback-label" wrapText="true" />
-        </VBox>
+                <!-- Results Tab -->
+                <Tab text="Results" closable="false">
+                    <VBox spacing="25" styleClass="instructor-container">
+                        <padding>
+                            <Insets top="30" right="40" bottom="40" left="40"/>
+                        </padding>
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Exam Results" styleClass="section-title"/>
+                            <TableView fx:id="resultTable" styleClass="table-view">
+                                <columns>
+                                    <TableColumn text="Student ID" prefWidth="150"/>
+                                    <TableColumn text="Exam ID" prefWidth="150"/>
+                                    <TableColumn text="Score" prefWidth="100"/>
+                                    <TableColumn text="Grade" prefWidth="100"/>
+                                </columns>
+                            </TableView>
+                            <HBox spacing="16" alignment="CENTER_RIGHT">
+                                <padding>
+                                    <Insets top="16" right="0" bottom="0" left="0"/>
+                                </padding>
+                                <Button fx:id="exportResultsButton" text="Export Results" onAction="#handleExportResults" styleClass="primary-button"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                </Tab>
+
+                <!-- Monitoring Tab -->
+                <Tab text="Monitoring" closable="false">
+                    <VBox spacing="25" styleClass="instructor-container">
+                        <padding>
+                            <Insets top="30" right="40" bottom="40" left="40"/>
+                        </padding>
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Active Students" styleClass="section-title"/>
+                            <ListView fx:id="activeStudentsList" styleClass="list-view" VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </VBox>
+                </Tab>
+
+                <!-- Evaluation & Control Tab -->
+                <Tab text="Evaluation &amp; Control" closable="false">
+                    <VBox spacing="25" styleClass="instructor-container">
+                        <padding>
+                            <Insets top="30" right="40" bottom="40" left="40"/>
+                        </padding>
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Evaluate Exam Results" styleClass="section-title"/>
+                            <GridPane hgap="16" vgap="16" styleClass="form-grid">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="120"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                </columnConstraints>
+                                <Label text="Exam ID" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="evaluationExamId" promptText="e.g., math123" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field"/>
+                                <Label text="Passing Score" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <TextField fx:id="passingScoreField" promptText="e.g., 50" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field"/>
+                            </GridPane>
+                            <HBox spacing="16" alignment="CENTER_RIGHT">
+                                <padding>
+                                    <Insets top="16" right="0" bottom="0" left="0"/>
+                                </padding>
+                                <Button fx:id="evaluateButton" text="Evaluate" onAction="#handleEvaluateExam" styleClass="primary-button"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Improved Real-Time Exam Control Section -->
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Real-Time Exam Control" styleClass="section-title"/>
+                            <HBox spacing="16" alignment="CENTER" styleClass="exam-control-container">
+                                <padding>
+                                    <Insets top="15" right="15" bottom="15" left="15"/>
+                                </padding>
+                                <Button fx:id="pauseExamButton" text="Pause Exam" onAction="#handlePauseExam" styleClass="secondary-button">
+                                    <padding>
+                                        <Insets top="12" right="24" bottom="12" left="24"/>
+                                    </padding>
+                                    <graphic>
+                                        <Region styleClass="icon-pause" />
+                                    </graphic>
+                                </Button>
+                                <Button fx:id="resumeExamButton" text="Resume Exam" onAction="#handleResumeExam" styleClass="primary-button">
+                                    <padding>
+                                        <Insets top="12" right="24" bottom="12" left="24"/>
+                                    </padding>
+                                    <graphic>
+                                        <Region styleClass="icon-play" />
+                                    </graphic>
+                                </Button>
+                                <Button fx:id="endExamButton" text="End Exam" onAction="#handleEndExam" styleClass="quit-button">
+                                    <padding>
+                                        <Insets top="12" right="24" bottom="12" left="24"/>
+                                    </padding>
+                                    <graphic>
+                                        <Region styleClass="icon-stop" />
+                                    </graphic>
+                                </Button>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Exam Status Section -->
+                        <VBox spacing="16" styleClass="card-section">
+                            <padding>
+                                <Insets top="24" right="24" bottom="24" left="24"/>
+                            </padding>
+                            <Text text="Exam Status" styleClass="section-title"/>
+                            <GridPane hgap="16" vgap="16" styleClass="form-grid">
+                                <columnConstraints>
+                                    <ColumnConstraints minWidth="150"/>
+                                    <ColumnConstraints hgrow="ALWAYS"/>
+                                </columnConstraints>
+                                <Label text="Active Exam ID:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <Label fx:id="activeExamIdLabel" text="None" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                                <Label text="Current Status:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <Label fx:id="examStatusLabel" text="Not Running" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="status-warning"/>
+                                <Label text="Participants:" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <Label fx:id="participantsCountLabel" text="0" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                                <Label text="Time Remaining:" GridPane.rowIndex="3" GridPane.columnIndex="0" styleClass="field-label"/>
+                                <Label fx:id="timeRemainingLabel" text="00:00:00" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                            </GridPane>
+                        </VBox>
+                    </VBox>
+                </Tab>
+            </TabPane>
+        </ScrollPane>
     </center>
+
+    <!-- Bottom Feedback -->
+    <bottom>
+        <HBox styleClass="feedback-panel" alignment="CENTER">
+            <padding>
+                <Insets top="10" bottom="10"/>
+            </padding>
+            <Label fx:id="feedbackLabel" text="" styleClass="feedback-label" wrapText="true"/>
+        </HBox>
+    </bottom>
 </BorderPane>

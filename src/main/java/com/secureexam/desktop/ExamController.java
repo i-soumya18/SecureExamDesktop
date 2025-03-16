@@ -30,9 +30,9 @@ import java.util.logging.Logger;
 
 public class ExamController {
     private static final Logger LOGGER = Logger.getLogger(ExamController.class.getName());
-    private static final int MOUSE_EDGE_BUFFER = 10; // Pixels from edge to trap mouse
-    private static final int MAX_FOCUS_LOSSES = 3;   // Max focus losses before auto-submit
-    private static final int EXAM_DURATION_SECONDS = 30 * 60; // 30 minutes
+    private static final int MOUSE_EDGE_BUFFER = 10;
+    private static final int MAX_FOCUS_LOSSES = 3;
+    private static final int EXAM_DURATION_SECONDS = 30 * 60;
 
     @FXML private Label timerLabel;
     @FXML private Label questionLabel;
@@ -65,7 +65,6 @@ public class ExamController {
     private void initialize() {
         db = FirestoreClient.getFirestore();
 
-        // Ensure ToggleGroup is set up if FXML injection fails
         if (optionsGroup == null) {
             LOGGER.severe("optionsGroup injection failed; creating fallback");
             optionsGroup = new ToggleGroup();
@@ -75,7 +74,10 @@ public class ExamController {
             option4.setToggleGroup(optionsGroup);
         }
 
-        if (examId != null && examCode != null) {
+        try {
+            if (examId == null || examCode == null) {
+                throw new IllegalStateException("Exam details not set");
+            }
             if (!validateExamCode()) {
                 LOGGER.severe("Exam code validation failed; returning to dashboard");
                 returnToDashboard();
@@ -83,9 +85,9 @@ public class ExamController {
             }
             initializeQuestions();
             setupLockdown();
-        } else {
-            LOGGER.warning("Exam details not set during initialization");
-            showAlert(Alert.AlertType.ERROR, "Exam Error", "Exam details missing. Returning to dashboard.");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to initialize exam", e);
+            showAlert(Alert.AlertType.ERROR, "Exam Error", "Failed to start exam: " + e.getMessage());
             returnToDashboard();
         }
     }
@@ -95,13 +97,11 @@ public class ExamController {
             DocumentSnapshot examDoc = db.collection("exams").document(examId).get().get();
             if (!examDoc.exists() || !examCode.equals(examDoc.getString("code"))) {
                 LOGGER.warning("Invalid exam code for examId: " + examId);
-                showAlert(Alert.AlertType.ERROR, "Validation Error", "Invalid exam session. Returning to dashboard.");
                 return false;
             }
             return true;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error validating exam code", e);
-            showAlert(Alert.AlertType.ERROR, "Validation Error", "Failed to validate exam session: " + e.getMessage());
             return false;
         }
     }
@@ -110,10 +110,7 @@ public class ExamController {
         try {
             questions = TestManager.getQuestionsForTestSeries(examId);
             if (questions == null || questions.isEmpty()) {
-                LOGGER.severe("No questions loaded for examId: " + examId);
-                showAlert(Alert.AlertType.ERROR, "Exam Error", "No questions available. Exiting exam.");
-                returnToDashboard();
-                return;
+                throw new IllegalStateException("No questions available for examId: " + examId);
             }
             userAnswers = new ArrayList<>(questions.size());
             flaggedQuestions = new ArrayList<>(questions.size());
@@ -127,8 +124,7 @@ public class ExamController {
             isExamActive = true;
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize questions", e);
-            showAlert(Alert.AlertType.ERROR, "Initialization Error", "Unable to start exam: " + e.getMessage());
-            returnToDashboard();
+            throw e;
         }
     }
 
@@ -136,24 +132,15 @@ public class ExamController {
         Stage stage = (Stage) timerLabel.getScene().getWindow();
         Scene scene = stage.getScene();
 
-        // Enforce fullscreen and prevent exit
         stage.setFullScreen(true);
         stage.setFullScreenExitHint("");
         stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
-        stage.setOnCloseRequest(event -> {
-            LOGGER.warning("Attempted window close blocked");
-            event.consume();
-        });
+        stage.setOnCloseRequest(event -> event.consume());
 
-        // Block all keyboard shortcuts
-        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            LOGGER.info("Blocked key press: " + event.getCode());
-            event.consume();
-        });
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, KeyEvent::consume);
         scene.addEventFilter(KeyEvent.KEY_RELEASED, KeyEvent::consume);
         scene.addEventFilter(KeyEvent.KEY_TYPED, KeyEvent::consume);
 
-        // Trap mouse near screen edges
         Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
         scene.addEventFilter(MouseEvent.MOUSE_MOVED, event -> {
             double x = event.getScreenX();
@@ -165,7 +152,6 @@ public class ExamController {
             }
         });
 
-        // Monitor focus loss
         stage.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal && isExamActive) {
                 focusLossCount++;
@@ -181,6 +167,7 @@ public class ExamController {
                 });
             }
         });
+        LOGGER.info("Exam lockdown setup complete");
     }
 
     private void startTimer() {
@@ -205,52 +192,47 @@ public class ExamController {
             return;
         }
         Question question = questions.get(index);
-        questionNumberLabel.setText(String.format("Question %d of %d", index + 1, questions.size()));
-        questionLabel.setText(question.getText());
-        String[] options = question.getOptions();
-        option1.setText(options[0]);
-        option2.setText(options[1]);
-        option3.setText(options[2]);
-        option4.setText(options[3]);
+        Platform.runLater(() -> {
+            questionNumberLabel.setText(String.format("Question %d of %d", index + 1, questions.size()));
+            questionLabel.setText(question.getText());
+            String[] options = question.getOptions();
+            option1.setText(options[0]);
+            option2.setText(options[1]);
+            option3.setText(options[2]);
+            option4.setText(options[3]);
 
-        String selectedAnswer = userAnswers.get(index);
-        if (selectedAnswer != null) {
-            option1.setSelected(options[0].equals(selectedAnswer));
-            option2.setSelected(options[1].equals(selectedAnswer));
-            option3.setSelected(options[2].equals(selectedAnswer));
-            option4.setSelected(options[3].equals(selectedAnswer));
-        } else {
-            optionsGroup.getToggles().forEach(toggle -> ((RadioButton) toggle).setSelected(false));
-        }
+            String selectedAnswer = userAnswers.get(index);
+            if (selectedAnswer != null) {
+                option1.setSelected(options[0].equals(selectedAnswer));
+                option2.setSelected(options[1].equals(selectedAnswer));
+                option3.setSelected(options[2].equals(selectedAnswer));
+                option4.setSelected(options[3].equals(selectedAnswer));
+            } else {
+                optionsGroup.getToggles().forEach(toggle -> ((RadioButton) toggle).setSelected(false));
+            }
 
-        previousButton.setDisable(index == 0);
-        nextButton.setDisable(index == questions.size() - 1);
-        submitButton.setVisible(index == questions.size() - 1);
-        flagButton.setText(flaggedQuestions.get(index) ? "Unflag" : "Flag");
+            previousButton.setDisable(index == 0);
+            nextButton.setDisable(index == questions.size() - 1);
+            submitButton.setVisible(index == questions.size() - 1);
+            flagButton.setText(flaggedQuestions.get(index) ? "Unflag" : "Flag");
+        });
     }
 
     private void updateProgressBar() {
         double progress = (double) (currentQuestionIndex + 1) / questions.size();
-        progressBar.setProgress(progress);
+        Platform.runLater(() -> progressBar.setProgress(progress));
     }
 
-    @FXML
-    private void handlePrevious(ActionEvent event) {
-        saveAnswer();
-        if (currentQuestionIndex > 0) {
-            currentQuestionIndex--;
-            loadQuestion(currentQuestionIndex);
-            LOGGER.info("Navigated to previous question: " + (currentQuestionIndex + 1));
-        }
-    }
+    @FXML private void handlePrevious(ActionEvent event) { navigateQuestion(-1); }
+    @FXML private void handleNext(ActionEvent event) { navigateQuestion(1); }
 
-    @FXML
-    private void handleNext(ActionEvent event) {
+    private void navigateQuestion(int direction) {
         saveAnswer();
-        if (currentQuestionIndex < questions.size() - 1) {
-            currentQuestionIndex++;
+        int newIndex = currentQuestionIndex + direction;
+        if (newIndex >= 0 && newIndex < questions.size()) {
+            currentQuestionIndex = newIndex;
             loadQuestion(currentQuestionIndex);
-            LOGGER.info("Navigated to next question: " + (currentQuestionIndex + 1));
+            LOGGER.info("Navigated to question: " + (currentQuestionIndex + 1));
         }
     }
 
@@ -266,7 +248,7 @@ public class ExamController {
     @FXML
     private void handleSubmit(ActionEvent event) {
         saveAnswer();
-        if (event != null) { // Null event means auto-submit (time out or focus loss)
+        if (event != null) {
             Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to submit your exam?", ButtonType.YES, ButtonType.NO);
             Optional<ButtonType> result = confirmation.showAndWait();
             if (!result.isPresent() || result.get() != ButtonType.YES) return;
@@ -304,20 +286,21 @@ public class ExamController {
         }
         isExamActive = false;
         LOGGER.info("Exam " + reason + "; score: " + score);
-        Alert resultAlert = new Alert(Alert.AlertType.INFORMATION);
-        resultAlert.setTitle("Exam " + reason.substring(0, 1).toUpperCase() + reason.substring(1));
-        resultAlert.setHeaderText("Exam Completed");
-        resultAlert.setContentText("You scored " + score + " out of " + questions.size() + ".\nFocus losses: " + focusLossCount);
-        resultAlert.showAndWait();
-
-        releaseLockdown();
-        returnToDashboard();
+        Platform.runLater(() -> {
+            Alert resultAlert = new Alert(Alert.AlertType.INFORMATION);
+            resultAlert.setTitle("Exam " + reason.substring(0, 1).toUpperCase() + reason.substring(1));
+            resultAlert.setHeaderText("Exam Completed");
+            resultAlert.setContentText("You scored " + score + " out of " + questions.size() + ".\nFocus losses: " + focusLossCount);
+            resultAlert.showAndWait();
+            releaseLockdown();
+            returnToDashboard();
+        });
     }
 
     private void releaseLockdown() {
         Stage stage = (Stage) submitButton.getScene().getWindow();
         stage.setFullScreen(false);
-        stage.setOnCloseRequest(null); // Re-enable window close
+        stage.setOnCloseRequest(null);
         LOGGER.info("Lockdown released");
     }
 
@@ -329,7 +312,11 @@ public class ExamController {
             FadeTransition fadeIn = new FadeTransition(Duration.millis(500), root);
             fadeIn.setFromValue(0.0);
             fadeIn.setToValue(1.0);
-            fadeIn.setOnFinished(e -> stage.setScene(newScene));
+            fadeIn.setOnFinished(e -> {
+                stage.setScene(newScene);
+                stage.setResizable(true);
+                stage.setOnCloseRequest(null);
+            });
             fadeIn.play();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Failed to return to dashboard", e);
