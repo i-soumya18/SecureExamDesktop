@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import java.net.URL?>
+
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+<VBox xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.SetupWizardController" prefWidth="600" prefHeight="400" spacing="20" styleClass="root">
+    <stylesheets>
+        <URL value="@../css/styles.css" />
+    </stylesheets>
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20" />
+    </padding>
+
+    <!-- Header -->
+    <HBox alignment="CENTER" spacing="10">
+        <Text text="Setup Wizard" styleClass="app-title" />
+    </HBox>
+
+    <!-- Progress Indicator -->
+    <ProgressBar fx:id="progressBar" progress="0.0" prefWidth="Infinity" styleClass="progress-bar" />
+
+    <!-- Main Content (Steps) -->
+    <TabPane fx:id="stepTabs" tabClosingPolicy="UNAVAILABLE" styleClass="tab-pane" VBox.vgrow="ALWAYS">
+
+        <!-- Step 1: Welcome -->
+        <Tab text="Welcome" fx:id="welcomeTab">
+            <VBox spacing="15" styleClass="wizard-step">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20" />
+                </padding>
+                <Text text="Welcome to SecureExam Desktop" styleClass="section-title" />
+                <Label text="This wizard will guide you through the initial setup of the application. You’ll configure Firebase, MongoDB, and user preferences in the next steps."
+                       wrapText="true" styleClass="description-label" />
+                <Region VBox.vgrow="ALWAYS" />
+                <Label fx:id="welcomeMessage" text="Click 'Next' to begin." styleClass="info-label" />
+            </VBox>
+        </Tab>
+
+        <!-- Step 2: Firebase Configuration -->
+        <Tab text="Firebase Setup" fx:id="firebaseTab">
+            <VBox spacing="15" styleClass="wizard-step">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20" />
+                </padding>
+                <Text text="Configure Firebase" styleClass="section-title" />
+                <Label text="Provide your Firebase service account file and project ID." wrapText="true" styleClass="description-label" />
+                <GridPane hgap="10" vgap="10" styleClass="form-grid">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="150" />
+                        <ColumnConstraints hgrow="ALWAYS" />
+                    </columnConstraints>
+                    <Label text="Service Account File:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="serviceAccountField" promptText="Path to service-account.json" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Button fx:id="browseServiceAccountButton" text="Browse" onAction="#handleBrowseServiceAccount" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="secondary-button" />
+                    <Label text="Project ID:" GridPane.rowIndex="2" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="projectIdField" promptText="e.g., secureexam-12345" GridPane.rowIndex="2" GridPane.columnIndex="1" styleClass="text-field" />
+                </GridPane>
+                <Region VBox.vgrow="ALWAYS" />
+                <Label fx:id="firebaseFeedback" text="" styleClass="feedback-label" wrapText="true" />
+            </VBox>
+        </Tab>
+
+        <!-- Step 3: MongoDB Configuration -->
+        <Tab text="MongoDB Setup" fx:id="mongoTab">
+            <VBox spacing="15" styleClass="wizard-step">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20" />
+                </padding>
+                <Text text="Configure MongoDB" styleClass="section-title" />
+                <Label text="Enter your MongoDB connection details." wrapText="true" styleClass="description-label" />
+                <GridPane hgap="10" vgap="10" styleClass="form-grid">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="150" />
+                        <ColumnConstraints hgrow="ALWAYS" />
+                    </columnConstraints>
+                    <Label text="Connection String:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="mongoConnectionString" promptText="e.g., mongodb://localhost:27017" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
+                    <Label text="Database Name:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
+                    <TextField fx:id="mongoDatabase" promptText="e.g., secureexam" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="text-field" />
+                </GridPane>
+                <Region VBox.vgrow="ALWAYS" />
+                <Label fx:id="mongoFeedback" text="" styleClass="feedback-label" wrapText="true" />
+            </VBox>
+        </Tab>
+
+        <!-- Step 4: User Preferences -->
+        <Tab text="Preferences" fx:id="preferencesTab">
+            <VBox spacing="15" styleClass="wizard-step">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20" />
+                </padding>
+                <Text text="Set Preferences" styleClass="section-title" />
+                <Label text="Configure your initial preferences for the application." wrapText="true" styleClass="description-label" />
+                <GridPane hgap="10" vgap="10" styleClass="form-grid">
+                    <columnConstraints>
+                        <ColumnConstraints minWidth="150" />
+                        <ColumnConstraints hgrow="ALWAYS" />
+                    </columnConstraints>
+                    <Label text="Theme:" GridPane.rowIndex="0" GridPane.columnIndex="0" styleClass="field-label" />
+                    <ComboBox fx:id="themeComboBox" promptText="Select Theme" GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="combo-box">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="Light" />
+                                <String fx:value="Dark" />
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                    <Label text="Language:" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="field-label" />
+                    <ComboBox fx:id="languageComboBox" promptText="Select Language" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="combo-box">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="English" />
+                                <String fx:value="Spanish" />
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                </GridPane>
+                <Region VBox.vgrow="ALWAYS" />
+                <Label fx:id="preferencesFeedback" text="" styleClass="feedback-label" wrapText="true" />
+            </VBox>
+        </Tab>
+
+        <!-- Step 5: Finish -->
+        <Tab text="Finish" fx:id="finishTab">
+            <VBox spacing="15" styleClass="wizard-step">
+                <padding>
+                    <Insets top="20" right="20" bottom="20" left="20" />
+                </padding>
+                <Text text="Setup Complete" styleClass="section-title" />
+                <Label text="You’ve successfully configured SecureExam Desktop. Click 'Finish' to start using the application."
+                       wrapText="true" styleClass="description-label" />
+                <Region VBox.vgrow="ALWAYS" />
+                <Label fx:id="finishMessage" text="Ready to launch!" styleClass="info-label" />
+            </VBox>
+        </Tab>
+    </TabPane>
+
+    <!-- Navigation Buttons -->
+    <HBox alignment="CENTER_RIGHT" spacing="10" styleClass="navigation-panel">
+        <padding>
+            <Insets top="10" right="0" bottom="0" left="0" />
+        </padding>
+        <Button fx:id="backButton" text="Back" onAction="#handleBack" styleClass="secondary-button" disable="true" />
+        <Button fx:id="nextButton" text="Next" onAction="#handleNext" styleClass="primary-button" />
+        <Button fx:id="finishButton" text="Finish" onAction="#handleFinish" styleClass="primary-button" disable="true" />
+        <Button fx:id="cancelButton" text="Cancel" onAction="#handleCancel" styleClass="quit-button" />
+    </HBox>
+
+    <!-- Feedback Label -->
+    <Label fx:id="generalFeedback" text="" styleClass="feedback-label" wrapText="true" />
+</VBox>

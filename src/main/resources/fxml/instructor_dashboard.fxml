@@ -2,9 +2,9 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.*?>
+<?import java.net.URL?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
-<?import java.net.URL?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.InstructorDashboardController" styleClass="root">
     <stylesheets>
@@ -217,7 +217,7 @@
                             </HBox>
                         </VBox>
 
-                        <!-- Improved Real-Time Exam Control Section -->
+                        <!-- Real-Time Exam Control Section -->
                         <VBox spacing="16" styleClass="card-section">
                             <padding>
                                 <Insets top="24" right="24" bottom="24" left="24"/>

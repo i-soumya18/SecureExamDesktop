@@ -33,10 +33,11 @@ public class InstructorDashboardController {
 
     // Exam Creation Fields
     @FXML private TextField examName, examCode, examStream, examBranch, examCourse, examClass, examSection;
-    @FXML private TextField questionExamId, questionText, option1, option2, option3, option4, correctAnswer;
+    @FXML private TextField questionExamId, questionText, correctAnswer;
+    @FXML private TextArea optionsTextArea; // Replaced individual option fields with a TextArea for flexible options
     @FXML private TextField csvExamIdField;
 
-    // New UI Elements for Added Features
+    // UI Elements for Added Features
     @FXML private TabPane dashboardTabs;
     @FXML private TableView<StudentResult> resultTable;
     @FXML private PieChart performanceChart;
@@ -61,7 +62,6 @@ public class InstructorDashboardController {
 
     public void setUserAttributes(Map<String, String> attributes) {
         this.userAttributes = attributes;
-        // Load data after attributes are set
         if (this.userAttributes != null) {
             loadAnalytics();
             loadResults();
@@ -104,7 +104,7 @@ public class InstructorDashboardController {
             examData.put("createdAt", System.currentTimeMillis());
             examData.put("status", "active");
 
-            db.collection("exams").document(examId).set(examData);
+            db.collection("exams").document(examId).set(examData).get();
             LOGGER.info("Created exam " + name + " with examId " + examId);
             logAudit("create_exam", name);
             showFeedback("Exam " + name + " created successfully. Exam ID: " + examId, false);
@@ -119,18 +119,24 @@ public class InstructorDashboardController {
     private void handleAddQuestion(ActionEvent event) {
         String examId = questionExamId.getText().trim();
         String text = questionText.getText().trim();
-        String opt1 = option1.getText().trim();
-        String opt2 = option2.getText().trim();
-        String opt3 = option3.getText().trim();
-        String opt4 = option4.getText().trim();
+        String optionsInput = optionsTextArea.getText().trim();
         String correct = correctAnswer.getText().trim();
 
-        if (examId.isEmpty() || text.isEmpty() || opt1.isEmpty() || opt2.isEmpty() || opt3.isEmpty() || opt4.isEmpty() || correct.isEmpty()) {
+        if (examId.isEmpty() || text.isEmpty() || optionsInput.isEmpty() || correct.isEmpty()) {
             showFeedback("All question fields are required.", true);
             return;
         }
 
-        List<String> options = Arrays.asList(opt1, opt2, opt3, opt4);
+        List<String> options = Arrays.stream(optionsInput.split("\n"))
+                .map(String::trim)
+                .filter(opt -> !opt.isEmpty())
+                .collect(Collectors.toList());
+
+        if (options.size() < 2) {
+            showFeedback("At least two options are required.", true);
+            return;
+        }
+
         if (!options.contains(correct)) {
             showFeedback("Correct answer must be one of the options.", true);
             return;
@@ -153,8 +159,8 @@ public class InstructorDashboardController {
             if (questions == null) questions = new ArrayList<>();
             questions.add(questionData);
 
-            examRef.update("questions", questions);
-            LOGGER.info("Added question to examId " + examId);
+            examRef.update("questions", questions).get();
+            LOGGER.info("Added question to examId " + examId + " with " + options.size() + " options");
             logAudit("add_question", examId);
             showFeedback("Question added to exam " + examId + " successfully.", false);
             clearQuestionFields();
@@ -177,10 +183,10 @@ public class InstructorDashboardController {
 
             String examId = csvExamIdField.getText().trim();
             try (CSVWriter writer = new CSVWriter(new FileWriter(file))) {
-                String[] headers = {"examId", "questionText", "option1", "option2", "option3", "option4", "correctAnswer"};
+                String[] headers = {"examId", "questionText", "options", "correctAnswer"};
                 writer.writeNext(headers);
                 if (!examId.isEmpty()) {
-                    String[] sampleRow = {examId, "", "", "", "", "", ""};
+                    String[] sampleRow = {examId, "Sample question", "Option1\nOption2\nOption3", "Option1"};
                     writer.writeNext(sampleRow);
                 }
             }
@@ -203,8 +209,8 @@ public class InstructorDashboardController {
 
         try (CSVReader reader = new CSVReader(new FileReader(file))) {
             String[] headers = reader.readNext();
-            if (headers == null || !Arrays.asList(headers).containsAll(Arrays.asList("examId", "questionText", "option1", "option2", "option3", "option4", "correctAnswer"))) {
-                showFeedback("Invalid CSV format: All required columns must be present.", true);
+            if (headers == null || !Arrays.asList(headers).containsAll(Arrays.asList("examId", "questionText", "options", "correctAnswer"))) {
+                showFeedback("Invalid CSV format: 'examId', 'questionText', 'options', 'correctAnswer' columns required.", true);
                 return;
             }
 
@@ -222,20 +228,24 @@ public class InstructorDashboardController {
 
                 String examId = questionData.get("examId");
                 String text = questionData.get("questionText");
-                String opt1 = questionData.get("option1");
-                String opt2 = questionData.get("option2");
-                String opt3 = questionData.get("option3");
-                String opt4 = questionData.get("option4");
+                String optionsStr = questionData.get("options");
                 String correct = questionData.get("correctAnswer");
 
-                if (examId == null || examId.isEmpty() || text == null || text.isEmpty() || opt1 == null || opt1.isEmpty() ||
-                    opt2 == null || opt2.isEmpty() || opt3 == null || opt3.isEmpty() || opt4 == null || opt4.isEmpty() ||
-                    correct == null || correct.isEmpty()) {
+                if (examId == null || examId.isEmpty() || text == null || text.isEmpty() || optionsStr == null || optionsStr.isEmpty() || correct == null || correct.isEmpty()) {
                     errors.add("Line " + lineNumber + ": Missing required fields.");
                     continue;
                 }
 
-                List<String> options = Arrays.asList(opt1, opt2, opt3, opt4);
+                List<String> options = Arrays.stream(optionsStr.split("\n"))
+                        .map(String::trim)
+                        .filter(opt -> !opt.isEmpty())
+                        .collect(Collectors.toList());
+
+                if (options.size() < 2) {
+                    errors.add("Line " + lineNumber + ": At least two options are required.");
+                    continue;
+                }
+
                 if (!options.contains(correct)) {
                     errors.add("Line " + lineNumber + ": Correct answer must match one of the options.");
                     continue;
@@ -258,7 +268,7 @@ public class InstructorDashboardController {
                     if (questions == null) questions = new ArrayList<>();
                     questions.add(question);
 
-                    examRef.update("questions", questions);
+                    examRef.update("questions", questions).get();
                     logAudit("add_question_bulk", examId);
                     addedCount++;
                 } catch (Exception e) {
@@ -360,16 +370,21 @@ public class InstructorDashboardController {
             return;
         }
         try {
-            List<QueryDocumentSnapshot> results = db.collection("results")
-                    .whereEqualTo("instructorEmail", userAttributes.get("email"))
+            List<QueryDocumentSnapshot> submissions = db.collection("submissions")
+                    .whereEqualTo("testSeries", userAttributes.get("email"))
                     .get().get().getDocuments();
             studentResults.clear();
-            for (QueryDocumentSnapshot result : results) {
+            for (QueryDocumentSnapshot submission : submissions) {
+                String studentId = submission.getString("studentId");
+                String examId = submission.getString("examId");
+                Long score = submission.getLong("score");
+                Long maxScore = submission.getLong("maxScore");
+                String grade = submission.getString("grade") != null ? submission.getString("grade") : "Not Evaluated";
                 studentResults.add(new StudentResult(
-                        result.getString("studentId"),
-                        result.getString("examId"),
-                        result.getLong("score").toString(),
-                        result.getString("grade")
+                        studentId,
+                        examId,
+                        score + "/" + maxScore,
+                        grade
                 ));
             }
             LOGGER.info("Loaded " + studentResults.size() + " results for instructor");
@@ -424,19 +439,19 @@ public class InstructorDashboardController {
 
         try {
             int passingScore = Integer.parseInt(passingScoreStr);
-            List<QueryDocumentSnapshot> results = db.collection("results")
+            List<QueryDocumentSnapshot> submissions = db.collection("submissions")
                     .whereEqualTo("examId", examId)
-                    .whereEqualTo("instructorEmail", userAttributes.get("email"))
+                    .whereEqualTo("testSeries", userAttributes.get("email"))
                     .get().get().getDocuments();
 
-            for (QueryDocumentSnapshot result : results) {
-                long score = result.getLong("score");
+            for (QueryDocumentSnapshot submission : submissions) {
+                long score = submission.getLong("score");
                 String grade = (score >= passingScore) ? "Pass" : "Fail";
-                result.getReference().update("grade", grade);
+                submission.getReference().update("grade", grade).get();
             }
             loadResults();
             logAudit("evaluate_exam", examId);
-            showFeedback("Evaluated " + results.size() + " results for exam " + examId, false);
+            showFeedback("Evaluated " + submissions.size() + " results for exam " + examId, false);
             LOGGER.info("Evaluated exam " + examId + " with passing score " + passingScore);
         } catch (NumberFormatException e) {
             showFeedback("Passing score must be a number.", true);
@@ -480,10 +495,16 @@ public class InstructorDashboardController {
     private void updateExamStatus(String examId, String status, String successMessage) {
         try {
             DocumentReference examRef = db.collection("exams").document(examId);
-            examRef.update("status", status);
+            DocumentSnapshot examDoc = examRef.get().get();
+            if (!examDoc.exists()) {
+                showFeedback("Exam ID " + examId + " does not exist.", true);
+                return;
+            }
+            examRef.update("status", status).get();
             logAudit("control_exam_" + status, examId);
             showFeedback(successMessage, false);
             LOGGER.info(successMessage);
+            loadAnalytics(); // Update analytics after status change
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to update exam status", e);
             showFeedback("Failed to " + status + " exam: " + e.getMessage(), true);
@@ -517,14 +538,18 @@ public class InstructorDashboardController {
         }
     }
 
+    // Helper Methods
     private void logAudit(String action, String target) {
         try {
             String idToken = LoginController.getIdToken();
             String uid = (idToken != null && !idToken.isEmpty()) ?
                     FirebaseAuth.getInstance().verifyIdToken(idToken).getUid() : "unknown";
-            db.collection("audit_logs").document().set(
-                    new AuditLog(uid, action, target, null, System.currentTimeMillis())
-            );
+            Map<String, Object> auditData = new HashMap<>();
+            auditData.put("uid", uid);
+            auditData.put("action", action);
+            auditData.put("target", target);
+            auditData.put("timestamp", System.currentTimeMillis());
+            db.collection("audit_logs").document().set(auditData).get();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to log audit event", e);
         }
@@ -560,13 +585,11 @@ public class InstructorDashboardController {
     private void clearQuestionFields() {
         questionExamId.clear();
         questionText.clear();
-        option1.clear();
-        option2.clear();
-        option3.clear();
-        option4.clear();
+        optionsTextArea.clear();
         correctAnswer.clear();
     }
 
+    // StudentResult Class
     public static class StudentResult {
         private final SimpleStringProperty studentId;
         private final SimpleStringProperty examId;

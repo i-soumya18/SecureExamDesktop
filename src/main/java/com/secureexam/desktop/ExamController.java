@@ -23,7 +23,9 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,11 +56,13 @@ public class ExamController {
     private int focusLossCount = 0;
     private boolean isExamActive = false;
     private Firestore db;
+    private String studentId; // Added to track student identity for sync
 
-    public void setExamDetails(String testSeries, String examId, String examCode) {
+    public void setExamDetails(String testSeries, String examId, String examCode, String studentId) {
         this.testSeries = testSeries;
         this.examId = examId;
         this.examCode = examCode;
+        this.studentId = studentId; // Store student ID for submission
     }
 
     @FXML
@@ -75,8 +79,8 @@ public class ExamController {
         }
 
         try {
-            if (examId == null || examCode == null) {
-                throw new IllegalStateException("Exam details not set");
+            if (examId == null || examCode == null || studentId == null) {
+                throw new IllegalStateException("Exam details or student ID not set");
             }
             if (!validateExamCode()) {
                 LOGGER.severe("Exam code validation failed; returning to dashboard");
@@ -85,9 +89,11 @@ public class ExamController {
             }
             initializeQuestions();
             setupLockdown();
+            NetworkManager.disableInternet(); // Disable internet at exam start
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize exam", e);
             showAlert(Alert.AlertType.ERROR, "Exam Error", "Failed to start exam: " + e.getMessage());
+            NetworkManager.enableInternet(); // Ensure internet is restored on failure
             returnToDashboard();
         }
     }
@@ -122,6 +128,13 @@ public class ExamController {
             loadQuestion(currentQuestionIndex);
             updateProgressBar();
             isExamActive = true;
+            // Initialize local cache with empty answers
+            Map<Integer, String> answersMap = new HashMap<>();
+            for (int i = 0; i < questions.size(); i++) {
+                answersMap.put(i, null);
+            }
+            LocalCache.saveSubmission(examId, studentId, answersMap);
+            LOGGER.info("Exam initialized with " + questions.size() + " questions for examId: " + examId);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to initialize questions", e);
             throw e;
@@ -223,8 +236,15 @@ public class ExamController {
         Platform.runLater(() -> progressBar.setProgress(progress));
     }
 
-    @FXML private void handlePrevious(ActionEvent event) { navigateQuestion(-1); }
-    @FXML private void handleNext(ActionEvent event) { navigateQuestion(1); }
+    @FXML
+    private void handlePrevious(ActionEvent event) {
+        navigateQuestion(-1);
+    }
+
+    @FXML
+    private void handleNext(ActionEvent event) {
+        navigateQuestion(1);
+    }
 
     private void navigateQuestion(int direction) {
         saveAnswer();
@@ -248,7 +268,7 @@ public class ExamController {
     @FXML
     private void handleSubmit(ActionEvent event) {
         saveAnswer();
-        if (event != null) {
+        if (event != null) { // Manual submission
             Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to submit your exam?", ButtonType.YES, ButtonType.NO);
             Optional<ButtonType> result = confirmation.showAndWait();
             if (!result.isPresent() || result.get() != ButtonType.YES) return;
@@ -267,7 +287,15 @@ public class ExamController {
 
     private void saveAnswer() {
         RadioButton selected = (RadioButton) optionsGroup.getSelectedToggle();
-        userAnswers.set(currentQuestionIndex, selected != null ? selected.getText() : null);
+        String answer = selected != null ? selected.getText() : null;
+        userAnswers.set(currentQuestionIndex, answer);
+        // Update local cache
+        Map<Integer, String> answersMap = new HashMap<>();
+        for (int i = 0; i < userAnswers.size(); i++) {
+            answersMap.put(i, userAnswers.get(i));
+        }
+        LocalCache.saveSubmission(examId, studentId, answersMap);
+        LOGGER.info("Saved answer for question " + (currentQuestionIndex + 1));
     }
 
     private int calculateScore() {
@@ -293,6 +321,8 @@ public class ExamController {
             resultAlert.setContentText("You scored " + score + " out of " + questions.size() + ".\nFocus losses: " + focusLossCount);
             resultAlert.showAndWait();
             releaseLockdown();
+            NetworkManager.enableInternet(); // Re-enable internet
+            syncSubmission(score); // Sync data with server
             returnToDashboard();
         });
     }
@@ -304,9 +334,53 @@ public class ExamController {
         LOGGER.info("Lockdown released");
     }
 
+    private void syncSubmission(int score) {
+        Map<Integer, String> answersMap = new HashMap<>();
+        for (int i = 0; i < userAnswers.size(); i++) {
+            answersMap.put(i, userAnswers.get(i));
+        }
+        LocalCache.saveSubmission(examId, studentId, answersMap); // Ensure latest answers are cached
+
+        if (!NetworkManager.isOnline()) {
+            LOGGER.info("Offline: Submission cached for later sync");
+            return;
+        }
+
+        try {
+            Map<String, Object> submission = new HashMap<>();
+            submission.put("examId", examId);
+            submission.put("studentId", studentId);
+            submission.put("testSeries", testSeries);
+            submission.put("answers", answersMap);
+            submission.put("score", score);
+            submission.put("maxScore", questions.size());
+            submission.put("focusLosses", focusLossCount);
+            submission.put("timestamp", System.currentTimeMillis());
+            submission.put("flaggedQuestions", flaggedQuestions);
+
+            db.collection("submissions").document(examId + "_" + studentId).set(submission).get();
+            LocalCache.markSubmissionAsSynced(examId, studentId);
+            LOGGER.info("Submission synced for examId: " + examId + ", studentId: " + studentId + ", score: " + score);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to sync submission", e);
+            // Submission remains cached for later sync
+        }
+    }
+
     private void returnToDashboard() {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/fxml/student_dashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/student_dashboard.fxml"));
+            Parent root = loader.load();
+            StudentDashboardController controller = loader.getController();
+            controller.setUserAttributes(new HashMap<String, String>() {{
+                put("email", studentId);
+                // Add other attributes as needed, fetched from user data or passed from caller
+                put("stream", "Engineering");
+                put("branch", "CSE");
+                put("course", "B.Tech");
+                put("class", "Semester 4");
+                put("section", "A");
+            }});
             Stage stage = (Stage) submitButton.getScene().getWindow();
             Scene newScene = new Scene(root, 800, 600);
             FadeTransition fadeIn = new FadeTransition(Duration.millis(500), root);

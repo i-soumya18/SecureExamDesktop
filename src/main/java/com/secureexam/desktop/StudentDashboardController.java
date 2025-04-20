@@ -15,13 +15,13 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCombination; // Added import
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +31,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 public class StudentDashboardController {
     private static final Logger LOGGER = Logger.getLogger(StudentDashboardController.class.getName());
 
@@ -48,7 +47,6 @@ public class StudentDashboardController {
     @FXML private VBox resultCard1;
     @FXML private VBox resultCard2;
     @FXML private TextField examCodeField;
-
     private ScheduledExecutorService tokenRefreshScheduler;
     private Firestore db;
     private Map<String, String> userAttributes;
@@ -108,7 +106,9 @@ public class StudentDashboardController {
             String className = userAttributes.get("class");
             String section = userAttributes.get("section");
 
-            List<QueryDocumentSnapshot> exams = db.collection("exams")
+            List<QueryDocumentSnapshot> exams;
+            if (NetworkManager.isOnline()) {
+                exams = db.collection("exams")
                     .whereEqualTo("stream", stream)
                     .whereEqualTo("branch", branch)
                     .whereEqualTo("course", course)
@@ -117,6 +117,10 @@ public class StudentDashboardController {
                     .get()
                     .get()
                     .getDocuments();
+            } else {
+                LOGGER.info("Offline mode: Loading exams from cache");
+                exams = new ArrayList<>(); // Stub; extend LocalCache if needed
+            }
 
             ObservableList<String> testSeries = FXCollections.observableArrayList();
             examIdMap.clear();
@@ -163,15 +167,15 @@ public class StudentDashboardController {
 
         try {
             List<QueryDocumentSnapshot> examDocs = db.collection("exams")
-                    .whereEqualTo("name", selectedTestSeries)
-                    .whereEqualTo("stream", userAttributes.get("stream"))
-                    .whereEqualTo("branch", userAttributes.get("branch"))
-                    .whereEqualTo("course", userAttributes.get("course"))
-                    .whereEqualTo("class", userAttributes.get("class"))
-                    .whereEqualTo("section", userAttributes.get("section"))
-                    .get()
-                    .get()
-                    .getDocuments();
+                .whereEqualTo("name", selectedTestSeries)
+                .whereEqualTo("stream", userAttributes.get("stream"))
+                .whereEqualTo("branch", userAttributes.get("branch"))
+                .whereEqualTo("course", userAttributes.get("course"))
+                .whereEqualTo("class", userAttributes.get("class"))
+                .whereEqualTo("section", userAttributes.get("section"))
+                .get()
+                .get()
+                .getDocuments();
 
             if (examDocs.isEmpty()) {
                 throw new IllegalStateException("Exam not found for: " + selectedTestSeries);
@@ -186,10 +190,11 @@ public class StudentDashboardController {
             }
 
             String examId = examDoc.getString("examId");
+            NetworkManager.disableInternet(); // Cut off internet
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/exam.fxml"));
             Parent root = loader.load();
             ExamController examController = loader.getController();
-            examController.setExamDetails(selectedTestSeries, examId, correctCode);
+            examController.setExamDetails(selectedTestSeries, examId, correctCode, userAttributes.get("email"));
             Stage stage = (Stage) startExamButton.getScene().getWindow();
             Scene newScene = new Scene(root);
             stage.setScene(newScene);
@@ -211,9 +216,15 @@ public class StudentDashboardController {
         try {
             String idToken = LoginController.getIdToken();
             String uid = (idToken != null && !idToken.isEmpty()) ?
-                    FirebaseAuth.getInstance().verifyIdToken(idToken).getUid() : "unknown";
+                FirebaseAuth.getInstance().verifyIdToken(idToken).getUid() : "unknown";
             db.collection("audit_logs").document().set(
-                    new AuditLog(uid, "exam_code_validation_failed", examName, enteredCode, System.currentTimeMillis())
+                new HashMap<String, Object>() {{
+                    put("uid", uid);
+                    put("event", "exam_code_validation_failed");
+                    put("examName", examName);
+                    put("enteredCode", enteredCode);
+                    put("timestamp", System.currentTimeMillis());
+                }}
             ).get();
             LOGGER.info("Logged failed exam code attempt for exam: " + examName);
         } catch (Exception e) {
@@ -255,7 +266,26 @@ public class StudentDashboardController {
     }
 
     @FXML private void handleNotifications(ActionEvent event) { showFeatureAlert("Notifications"); }
-    @FXML private void handleProfile(ActionEvent event) { showFeatureAlert("Profile"); }
+    @FXML
+    private void handleProfile(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/student_profile.fxml"));
+            Parent root = loader.load();
+
+            StudentProfileController controller = loader.getController();
+            controller.setUserAttributes(userAttributes);
+
+            Stage stage = (Stage) userMenuButton.getScene().getWindow();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.show();
+
+            LOGGER.info("Navigated to student profile view");
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Error loading profile view", e);
+            showAlert(Alert.AlertType.ERROR, "Navigation Error", "Failed to open profile: " + e.getMessage());
+        }
+    }
     @FXML private void handleSettings(ActionEvent event) { showFeatureAlert("Settings"); }
     @FXML private void handleMyExams(ActionEvent event) { refreshExamList(); showAlert(Alert.AlertType.INFORMATION, "My Exams", "Displaying your available exams."); }
     @FXML private void handleResults(ActionEvent event) { updateResultsVisibility(); showAlert(Alert.AlertType.INFORMATION, "Results", "Recent results displayed below."); }

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
-<?import java.net.URL?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
+<?import java.net.URL?>
 <?import javafx.scene.text.Text?>
 
 <StackPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.secureexam.desktop.LoginController" styleClass="root">
@@ -24,13 +24,13 @@
                     <padding>
                         <Insets bottom="30" />
                     </padding>
-
                     <StackPane styleClass="logo-container">
                         <ImageView fitHeight="60" fitWidth="60" preserveRatio="true" styleClass="app-logo">
-                            <Image url="@../images/logo.png" /> <!-- Ensure logo.png exists in resources -->
+                            <image>
+                                <Image url="@../images/logo.png" /> <!-- Ensure logo.png exists in resources -->
+                            </image>
                         </ImageView>
                     </StackPane>
-
                     <Text text="SecureExam Desktop" styleClass="app-title" />
                     <Text text="Login to your account" styleClass="login-subtitle" />
                 </VBox>
@@ -65,7 +65,9 @@
                         <Button fx:id="googleLoginButton" text="Login with Google" onAction="#handleGoogleLogin" styleClass="google-button" maxWidth="Infinity">
                             <graphic>
                                 <ImageView fitHeight="20" fitWidth="20" preserveRatio="true">
-                                    <Image url="@../images/google.png" /> <!-- Add Google icon to resources -->
+                                    <image>
+                                        <Image url="@../images/google.png" /> <!-- Add Google icon to resources -->
+                                    </image>
                                 </ImageView>
                             </graphic>
                         </Button>

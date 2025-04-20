@@ -1,7 +1,10 @@
 package com.secureexam.desktop;
 
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.UserRecord;
 import com.google.firebase.cloud.FirestoreClient;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -28,7 +31,10 @@ public class AdminController {
     @FXML private TextField teacherEmail;
     @FXML private TextField studentEmail, studentReg, studentStream, studentBranch, studentCourse, studentClass, studentSection;
     @FXML private TextField csvStreamField, csvBranchField, csvClassField, csvSectionField;
+    @FXML private TextField updateEmailField, updateRoleField;
+    @FXML private TextField deleteEmailField;
     @FXML private Button assignExaminer, addStudent, logoutButton, generateStudentCSVButton, uploadStudentCSVButton;
+    @FXML private Button updateUserButton, deleteUserButton;
     @FXML private Label feedbackLabel;
 
     private Map<String, String> userAttributes;
@@ -44,22 +50,37 @@ public class AdminController {
         this.userAttributes = attributes;
     }
 
+    // CREATE: Assign Examiner
     @FXML
     private void handleAssignExaminer(ActionEvent event) {
         String email = teacherEmail.getText().trim();
         if (email.isEmpty()) {
-            showFeedback("Please enter a teacher email or phone.", true);
+            showFeedback("Please enter a teacher email.", true);
             return;
         }
 
         try {
-            Map<String, Object> data = new HashMap<>();
-            data.put("role", "examiner");
-            data.put("email", email);
-            db.collection("users").document(email).set(data);
+            DocumentSnapshot userDoc = db.collection("users").document(email).get().get();
+            String inviteCode = UUID.randomUUID().toString().substring(0, 8);
+            Map<String, Object> inviteData = new HashMap<>();
+            inviteData.put("email", email);
+            inviteData.put("role", "examiner");
+            inviteData.put("used", false);
+            db.collection("invites").document(inviteCode).set(inviteData).get();
+
+            if (userDoc.exists()) {
+                db.collection("users").document(email).update("role", "examiner").get();
+                showFeedback("Examiner role assigned to " + email + ". Invite code: " + inviteCode, false);
+            } else {
+                Map<String, Object> data = new HashMap<>();
+                data.put("role", "examiner");
+                data.put("email", email);
+                db.collection("users").document(email).set(data).get();
+                showFeedback("New examiner " + email + " added. Invite code: " + inviteCode, false);
+            }
+
             LOGGER.info("Assigned examiner role to " + email);
             logAudit("assign_examiner", email);
-            showFeedback("Examiner role assigned to " + email + " successfully.", false);
             teacherEmail.clear();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to assign examiner role", e);
@@ -67,6 +88,7 @@ public class AdminController {
         }
     }
 
+    // CREATE: Add Student
     @FXML
     private void handleAddStudent(ActionEvent event) {
         String email = studentEmail.getText().trim();
@@ -83,6 +105,19 @@ public class AdminController {
         }
 
         try {
+            DocumentSnapshot userDoc = db.collection("users").document(email).get().get();
+            if (userDoc.exists()) {
+                showFeedback("User " + email + " already exists.", true);
+                return;
+            }
+
+            String inviteCode = UUID.randomUUID().toString().substring(0, 8);
+            Map<String, Object> inviteData = new HashMap<>();
+            inviteData.put("email", email);
+            inviteData.put("role", "student");
+            inviteData.put("used", false);
+            db.collection("invites").document(inviteCode).set(inviteData).get();
+
             Map<String, Object> data = new HashMap<>();
             data.put("role", "student");
             data.put("email", email);
@@ -93,10 +128,10 @@ public class AdminController {
             data.put("class", className.isEmpty() ? null : className);
             data.put("section", section.isEmpty() ? null : section);
 
-            db.collection("users").document(email).set(data);
+            db.collection("users").document(email).set(data).get();
             LOGGER.info("Added student " + email + " with reg_number " + regNumber);
             logAudit("add_student", email);
-            showFeedback("Student " + email + " added successfully.", false);
+            showFeedback("Student " + email + " added successfully. Invite code: " + inviteCode, false);
             clearStudentFields();
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to add student", e);
@@ -104,6 +139,89 @@ public class AdminController {
         }
     }
 
+    // READ: List Users (for future UI expansion, stubbed here)
+    private List<Map<String, Object>> listUsers() {
+        try {
+            List<QueryDocumentSnapshot> docs = db.collection("users").get().get().getDocuments();
+            List<Map<String, Object>> users = new ArrayList<>();
+            for (QueryDocumentSnapshot doc : docs) {
+                users.add(doc.getData());
+            }
+            LOGGER.info("Retrieved " + users.size() + " users");
+            return users;
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to list users", e);
+            showFeedback("Failed to list users: " + e.getMessage(), true);
+            return new ArrayList<>();
+        }
+    }
+
+    // UPDATE: Update User Role
+    @FXML
+    private void handleUpdateUser(ActionEvent event) {
+        String email = updateEmailField.getText().trim();
+        String newRole = updateRoleField.getText().trim();
+
+        if (email.isEmpty() || newRole.isEmpty()) {
+            showFeedback("Email and new role are required.", true);
+            return;
+        }
+
+        try {
+            DocumentSnapshot userDoc = db.collection("users").document(email).get().get();
+            if (!userDoc.exists()) {
+                showFeedback("User " + email + " does not exist.", true);
+                return;
+            }
+
+            db.collection("users").document(email).update("role", newRole).get();
+            LOGGER.info("Updated role for " + email + " to " + newRole);
+            logAudit("update_user_role", email + " to " + newRole);
+            showFeedback("Updated role for " + email + " to " + newRole, false);
+            updateEmailField.clear();
+            updateRoleField.clear();
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to update user role", e);
+            showFeedback("Failed to update user role: " + e.getMessage(), true);
+        }
+    }
+
+    // DELETE: Delete User
+    @FXML
+    private void handleDeleteUser(ActionEvent event) {
+        String email = deleteEmailField.getText().trim();
+
+        if (email.isEmpty()) {
+            showFeedback("Email is required.", true);
+            return;
+        }
+
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete " + email + "?", ButtonType.YES, ButtonType.NO);
+        confirmation.showAndWait().ifPresent(response -> {
+            if (response == ButtonType.YES) {
+                try {
+                    DocumentSnapshot userDoc = db.collection("users").document(email).get().get();
+                    if (!userDoc.exists()) {
+                        showFeedback("User " + email + " does not exist.", true);
+                        return;
+                    }
+
+                    UserRecord user = FirebaseAuth.getInstance().getUserByEmail(email);
+                    db.collection("users").document(email).delete().get();
+                    FirebaseAuth.getInstance().deleteUser(user.getUid());
+                    LOGGER.info("Deleted user " + email);
+                    logAudit("delete_user", email);
+                    showFeedback("Deleted user " + email + " successfully.", false);
+                    deleteEmailField.clear();
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Failed to delete user", e);
+                    showFeedback("Failed to delete user: " + e.getMessage(), true);
+                }
+            }
+        });
+    }
+
+    // Generate Student CSV Template
     @FXML
     private void handleGenerateStudentCSV(ActionEvent event) {
         try {
@@ -136,6 +254,7 @@ public class AdminController {
         }
     }
 
+    // Bulk CREATE: Upload Student CSV
     @FXML
     private void handleUploadStudentCSV(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
@@ -174,6 +293,19 @@ public class AdminController {
                 }
 
                 try {
+                    DocumentSnapshot userDoc = db.collection("users").document(email).get().get();
+                    if (userDoc.exists()) {
+                        errors.add("Line " + lineNumber + ": User " + email + " already exists.");
+                        continue;
+                    }
+
+                    String inviteCode = UUID.randomUUID().toString().substring(0, 8);
+                    Map<String, Object> inviteData = new HashMap<>();
+                    inviteData.put("email", email);
+                    inviteData.put("role", "student");
+                    inviteData.put("used", false);
+                    db.collection("invites").document(inviteCode).set(inviteData).get();
+
                     Map<String, Object> data = new HashMap<>();
                     data.put("role", "student");
                     data.put("email", email);
@@ -184,7 +316,7 @@ public class AdminController {
                     data.put("class", studentData.getOrDefault("class", ""));
                     data.put("section", studentData.getOrDefault("section", ""));
 
-                    db.collection("users").document(email).set(data);
+                    db.collection("users").document(email).set(data).get();
                     logAudit("add_student_bulk", email);
                     addedCount++;
                 } catch (Exception e) {
@@ -206,6 +338,7 @@ public class AdminController {
         }
     }
 
+    // Logout
     @FXML
     private void handleLogout(ActionEvent event) {
         Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to logout?", ButtonType.YES, ButtonType.NO);
@@ -215,10 +348,10 @@ public class AdminController {
                     LoginController.signOut();
                     Parent root = FXMLLoader.load(getClass().getResource("/fxml/login.fxml"));
                     Stage stage = (Stage) logoutButton.getScene().getWindow();
-                    stage.setFullScreen(false); // Ensure normal window mode
+                    stage.setFullScreen(false);
                     stage.setScene(new Scene(root, 800, 600));
-                    stage.setResizable(true); // Allow resizing
-                    stage.setOnCloseRequest(null); // Allow closing
+                    stage.setResizable(true);
+                    stage.setOnCloseRequest(null);
                     LOGGER.info("Admin logged out successfully");
                 } catch (IOException e) {
                     LOGGER.log(Level.SEVERE, "Error during logout", e);
@@ -228,14 +361,18 @@ public class AdminController {
         });
     }
 
+    // Helper Methods
     private void logAudit(String action, String target) {
         try {
             String idToken = LoginController.getIdToken();
             String uid = (idToken != null && !idToken.isEmpty()) ?
                     FirebaseAuth.getInstance().verifyIdToken(idToken).getUid() : "unknown";
-            db.collection("audit_logs").document().set(
-                    new AuditLog(uid, action, target, null, System.currentTimeMillis())
-            );
+            Map<String, Object> auditData = new HashMap<>();
+            auditData.put("uid", uid);
+            auditData.put("action", action);
+            auditData.put("target", target);
+            auditData.put("timestamp", System.currentTimeMillis());
+            db.collection("audit_logs").document().set(auditData);
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to log audit event", e);
         }
@@ -266,5 +403,22 @@ public class AdminController {
         studentCourse.clear();
         studentClass.clear();
         studentSection.clear();
+    }
+
+    // Getters and Setters for Testing
+    public Button comprendreExaminer() {
+        return assignExaminer;
+    }
+
+    public void setAssignExaminer(Button assignExaminer) {
+        this.assignExaminer = assignExaminer;
+    }
+
+    public Button getAddStudent() {
+        return addStudent;
+    }
+
+    public void setAddStudent(Button addStudent) {
+        this.addStudent = addStudent;
     }
 }

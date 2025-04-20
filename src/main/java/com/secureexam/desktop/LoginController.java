@@ -12,16 +12,11 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import okhttp3.*;
 import org.json.JSONObject;
-import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.cloud.FirestoreClient;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +33,8 @@ public class LoginController {
     private static String idToken;
     private static String refreshToken;
     private static ScheduledExecutorService tokenRefreshScheduler;
-    private static Firestore db;
-    private static FirebaseAuth auth;
+    private Firestore db;  // Instance field, initialized in initialize()
+    private FirebaseAuth auth;  // Instance field, initialized in initialize()
 
     @FXML private TextField emailField;
     @FXML private PasswordField passwordField;
@@ -50,26 +45,14 @@ public class LoginController {
     @FXML private Button mfaButton;
     @FXML private CheckBox rememberMeCheckbox;
 
-    static {
-        try {
-            FileInputStream serviceAccount = new FileInputStream("src/main/resources/firebase/assistant-65908-firebase-adminsdk-w999m-181efe1e50.json");
-            FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setDatabaseUrl("https://assistant-65908.firebaseio.com")
-                    .build();
-            FirebaseApp.initializeApp(options);
-            db = FirestoreClient.getFirestore();
-            auth = FirebaseAuth.getInstance();
-            LOGGER.info("Firebase initialized successfully");
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Failed to initialize Firebase", e);
-            Platform.runLater(() -> showFatalError("Firebase initialization failed: " + e.getMessage()));
-            throw new RuntimeException("Firebase initialization failed", e);
-        }
-    }
-
     @FXML
     public void initialize() {
+        // Initialize Firestore and FirebaseAuth from FirebaseInitializer
+        db = FirebaseInitializer.getFirestore();
+        auth = FirebaseInitializer.getAuth();
+        LOGGER.info("Firestore and FirebaseAuth initialized in LoginController");
+
+        // Reset UI elements
         errorLabel.setText("");
         loadingIndicator.setVisible(false);
         googleLoginButton.setDisable(false);
@@ -128,41 +111,79 @@ public class LoginController {
     @FXML
     private void handleGoogleLogin(ActionEvent event) {
         setLoadingState(true);
-        new Thread(() -> {
-            try {
-                // Placeholder for Google OAuth flow
-                String googleToken = "mock-google-token"; // Replace with actual Google OAuth implementation
-                JSONObject json = new JSONObject()
-                        .put("postBody", "id_token=" + googleToken + "&providerId=google.com")
-                        .put("requestUri", "http://localhost")
-                        .put("returnSecureToken", true);
-                RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json; charset=utf-8"));
-                Request request = new Request.Builder()
-                        .url("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=" + API_KEY)
-                        .post(body)
-                        .build();
-                try (Response response = client.newCall(request).execute()) {
-                    if (!response.isSuccessful()) {
-                        String responseBody = response.body().string();
-                        JSONObject result = new JSONObject(responseBody);
-                        String errorMessage = result.getJSONObject("error").getString("message");
-                        throw new IOException("Google login failed: " + errorMessage);
-                    }
-                    String responseBody = response.body().string();
-                    JSONObject result = new JSONObject(responseBody);
-                    idToken = result.getString("idToken");
-                    refreshToken = result.getString("refreshToken");
-                    String uid = result.getString("localId");
-                    String email = result.getString("email");
-                    fetchUserData(uid, email);
+        
+        // Start the Google OAuth flow
+        GoogleAuthHelper.getGoogleIdToken()
+            .thenAccept(googleIdToken -> {
+                // Use the ID token to authenticate with Firebase
+                try {
+                    JSONObject json = new JSONObject()
+                            .put("postBody", "id_token=" + googleIdToken + "&providerId=google.com")
+                            .put("requestUri", "http://localhost")
+                            .put("returnSecureToken", true);
+                    
+                    RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json; charset=utf-8"));
+                    Request request = new Request.Builder()
+                            .url("https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key=" + API_KEY)
+                            .post(body)
+                            .build();
+                    
+                    client.newCall(request).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            LOGGER.log(Level.SEVERE, "Firebase authentication failed", e);
+                            Platform.runLater(() -> {
+                                showError("Google login failed: " + e.getMessage());
+                                setLoadingState(false);
+                            });
+                        }
+                        
+                        @Override
+                        public void onResponse(Call call, Response response) throws IOException {
+                            try (ResponseBody responseBody = response.body()) {
+                                if (!response.isSuccessful()) {
+                                    String errorBody = responseBody != null ? responseBody.string() : "Unknown error";
+                                    JSONObject result = new JSONObject(errorBody);
+                                    String errorMessage = result.getJSONObject("error").getString("message");
+                                    throw new IOException("Google login failed: " + errorMessage);
+                                }
+                                
+                                String responseData = responseBody.string();
+                                JSONObject result = new JSONObject(responseData);
+                                idToken = result.getString("idToken");
+                                refreshToken = result.getString("refreshToken");
+                                String uid = result.getString("localId");
+                                String email = result.getString("email");
+                                
+                                // Fetch user data on the same thread
+                                fetchUserData(uid, email);
+                                
+                                Platform.runLater(() -> setLoadingState(false));
+                            } catch (Exception e) {
+                                LOGGER.log(Level.SEVERE, "Error processing Firebase response", e);
+                                Platform.runLater(() -> {
+                                    showError("Google login failed: " + e.getMessage());
+                                    setLoadingState(false);
+                                });
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    LOGGER.log(Level.SEVERE, "Error during Firebase authentication", e);
+                    Platform.runLater(() -> {
+                        showError("Google login failed: " + e.getMessage());
+                        setLoadingState(false);
+                    });
                 }
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE, "Google login failed", e);
-                Platform.runLater(() -> showError("Google login failed: " + e.getMessage()));
-            } finally {
-                Platform.runLater(() -> setLoadingState(false));
-            }
-        }).start();
+            })
+            .exceptionally(e -> {
+                LOGGER.log(Level.SEVERE, "Google OAuth flow failed", e);
+                Platform.runLater(() -> {
+                    showError("Google login failed: " + e.getMessage());
+                    setLoadingState(false);
+                });
+                return null;
+            });
     }
 
     @FXML
@@ -277,6 +298,9 @@ public class LoginController {
 
     private void fetchUserData(String uid, String email) {
         try {
+            if (db == null) {
+                throw new IllegalStateException("Firestore instance is null");
+            }
             DocumentSnapshot doc = db.collection("users").document(uid).get().get();
             Map<String, String> attributes = new HashMap<>();
             attributes.put("email", email);
